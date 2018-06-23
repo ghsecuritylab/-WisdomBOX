@@ -171,9 +171,6 @@
     <ClCompile Include="..\..\Src\ethernetif.c">
       <Filter>Source files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\syscalls.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\spi.c">
       <Filter>Source files</Filter>
     </ClCompile>

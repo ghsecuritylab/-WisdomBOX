@@ -19,17 +19,6 @@ extern "C" {
  */
 //#define DEBUG_PING
 
-#ifndef NULL              /* pointer to nothing */
-   #define NULL ((void *) 0)
-#endif
-
-#ifndef TRUE              /* Boolean true */
-   #define TRUE (1)
-#endif
-
-#ifndef FALSE              /* Boolean false */
-   #define FALSE (0)
-#endif
 
 /*
  * Bytes used to control the MCP4822 DAC
@@ -40,27 +29,6 @@ extern "C" {
 #define CH_A_OFF	0x00
 #define CH_B_OFF	0x80
 
-/*
- * The SS pin for the MSPI Mode DAC on the Goldilocks Analogue is driven by PB1.
- * This does not get handled automatically when using the USART MSPI Mode.
- * Added for support of SS pin on Goldilocks Analogue MCP4822
- */
-
-#define SPI_PORT_SS_DAC		PORTB
-#define SPI_PORT_DIR_SS_DAC	DDRB
-#define SPI_PORT_PIN_SS_DAC	PINB
-#define SPI_BIT_SS_DAC		_BV(PB1)	// added for support of integrated DAC card on PB1 Goldilocks Analogue MCP4822
-
-/*
- * The LDAC pin on the MCP4822 synchronises the two channels to produce a simultaneous sample output
- * (even though the samples are clocked in at slightly different times).
- * Added for support of LDAC pin on Goldilocks Analogue MCP4822
- */
-
-#define DAC_PORT_LCAC		PORTC
-#define DAC_PORT_DIR_LDAC	DDRC
-#define DAC_PORT_PIN_LDAC	PINC
-#define DAC_BIT_LDAC		_BV(PC3)
 
 
 //==================================================
@@ -131,25 +99,13 @@ typedef struct __attribute__ ((packed)) _filter_t {
 /*----------Public Function Definitions-------------*/
 /*--------------------------------------------------*/
 
-void DAC_Timer3_init(uint16_t const samplesSecond);	// set up the sampling Timer3, runs at audio sampling rate in Hz.
-                                                // 16 bit timer useful for any sampling rate.
-                                                // Including 44,100 Hz, 22,050 Hz, 11,025 Hz and any above rates too.
-                                                
-void DAC_Timer3_end(void); // stop the sampling reconstruction Timer3.
+	// end an SPI transfer with this; this raises the SS signal
+	void spi1_dac_finalize(void);
+	
+	// void spi1_dac_write(uint16_t);	// internal function, called by the two following...
+	void spi1_dac_write_cha(uint16_t); 	// write 16 bits to DAC channel A
+	void spi1_dac_write_chb(uint16_t); 	// write 16 bits to DAC channel B
 
-void DAC_setHandler(analogue_DSP * const handler, uint16_t * const ch_A, uint16_t * const ch_B);	// set up the DSP processing to prepare the samples.
-
-void DAC_init(uint8_t const post_latch);				// initialise the USART 1 MSPIM bus specifically for DAC use.
-                                                // pre-latch (for audio or AC), or post-latch for single value setting (DC values).
-
-//	if (something)
-//	{
-//		uint16_t j = 0x1234;
-//		uint16_t k = 0x5678;
-//		DAC_out(NULL, NULL); 	// the ch_A and ch_B are turned off by NULL, or
-//		DAC_out(&j, &k);		// output the j and k values by reference
-//	}
-void DAC_out(const uint16_t * const ch_A, const uint16_t * const ch_B) __attribute__ ((hot, flatten));
 
 
 //==================================================

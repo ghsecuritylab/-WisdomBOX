@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -52,23 +52,14 @@
 #include "cmsis_os.h"
 
 /* USER CODE BEGIN Includes */     
-/* ------------------------ LWIP includes --------------------------------- */
-#include "lwip/api.h"
-#include "lwip/tcpip.h"
-#include "lwip/memp.h"
-
-/* ------------------------ FreeModbus includes --------------------------- */
-#include "mb.h"
+#include "usart.h"
+#include "gpio.h"
 #include "iwdg.h"
-/* ------------------------ Project includes ------------------------------ */
-#include "tim.h"
-
-#include  "common.h"
-//#include "stm32f4xx_hal.h"
-#include "Relay.h"
+#include "DAC.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
+
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId ledTaskHandle;
@@ -89,7 +80,6 @@ extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
-/* ------------------------ Defines --------------------------------------- */
 
 /* USER CODE END FunctionPrototypes */
 
@@ -149,7 +139,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* init code for LWIP */
-//  MX_LWIP_Init();
+  MX_LWIP_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
@@ -165,101 +155,12 @@ void StartDefaultTask(void const * argument)
 void vMBServerTask(void const * argument)
 {
   /* USER CODE BEGIN vMBServerTask */
-	uint16_t pulse = 0;
-	uint16_t step;
-	for (;;)
-	{	
-		if (pulse == 0) 
-		{
-			step = 1;
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_RESET);
-			osDelay(1000);
-			// HAL_GPIO_TogglePin(REALY4_GPIO_Port, REALY4_Pin);
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_SET);
-			osDelay(2500);	
-		}
-		
-		if (pulse == 1000) step = -1;
-	
-		pulse += step;
-		
-		TIM1->CCR1 = pulse;
-		osDelay(3);
-	}
-//	struct netconn *conn, *newconn;
-//	err_t err, accept_err;
-//	struct netbuf *buf;
-//	char  tcpbuf;
-//	uint8_t *data;
-//	uint16_t Pulse;
-//	u16_t len;
-//      
-//	LWIP_UNUSED_ARG(argument);
-//
-//	/* Create a new connection identifier. */
-//	conn = netconn_new(NETCONN_TCP);
-//  
-//	if (conn != NULL)
-//	{  
-//		/* Bind connection to well known port number 7. */
-//		err = netconn_bind(conn, NULL,500);
-//    
-//		if (err == ERR_OK)
-//		{
-//			/* Tell connection to go into listening mode. */
-//			netconn_listen(conn);
-//			for (;;)
-//			{
-//				/* */
-//				accept_err = netconn_accept(conn, &newconn);
-//    
-//				/* Process the new connection. */
-//				if (accept_err == ERR_OK) 
-//				{
-//
-//					while (netconn_recv(newconn,&buf) == ERR_OK) 
-//					{
-//						
-//						do 
-//						{
-//						//	taskDISABLE_INTERRUPTS(); 	
-//							netbuf_data(buf, (void * *)&data, &len);
-//							
-//							if (data[0] == 0 && data[1] == 0x06)
-//							{
-//								if (data[2] == 0 && data[3] == 0x01) 
-//								{
-//									if (data[5] == 0) 	HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_RESET);
-//									else	HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_SET);
-//								}	
-//								else if (data[2] == 0 && data[3] == 0x0a) 
-//								{
-//									Pulse = ((uint16_t)data[4] << 8) | ((uint16_t)(data[5])); 
-//									if (Pulse > 1000) Pulse = 1000;
-//									
-//									TIM1->CCR1 = Pulse;
-//				 				}	
-//							}
-//							netconn_write(newconn, data, len, NETCONN_COPY);
-//						//	taskENABLE_INTERRUPTS();
-//          
-//						} while (netbuf_next(buf) >= 0);
-//          
-//						netbuf_delete(buf);
-//					}
-//        
-//					/* Close connection and discard connection identifier. */
-//					netconn_close(newconn);
-//					netconn_delete(newconn);
-//				}
-//				osDelay(1);
-//			}
-//		}
-//		else
-//		{
-//			netconn_delete(newconn);
-//		}
-//	}
+  /* Infinite loop */
+  for(;;)
+  {
+	  TIM4->CCR4 = 500;
+    osDelay(100);
+  }
   /* USER CODE END vMBServerTask */
 }
 
@@ -267,13 +168,21 @@ void vMBServerTask(void const * argument)
 void led(void const * argument)
 {
   /* USER CODE BEGIN led */
-	uint16_t pwm_value;
   /* Infinite loop */
+	char buff[32] =  {"hello\n\r"};
+	uint16_t dac;
   for(;;)
   {
-	  HAL_GPIO_TogglePin(REALY7_GPIO_Port, REALY7_Pin);
+	  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_TogglePin(REALY6_GPIO_Port, REALY6_Pin);
+	  dac = 2000;
+	  spi1_dac_write_cha(dac);
+	  dac = 4000;
+	  spi1_dac_write_chb(dac);
+	  HAL_UART_Transmit(&huart1, (uint8_t *)& buff, 10, 0xFFFF);
 	  HAL_IWDG_Refresh(&hiwdg);
-	  osDelay(1000);
+//  printf("hello\r\n");
+    osDelay(1000);
   }
   /* USER CODE END led */
 }
@@ -282,30 +191,18 @@ void led(void const * argument)
 void uMBpoll(void const * argument)
 {
   /* USER CODE BEGIN uMBpoll */
-//	uint8_t Relay;
-//	uint8_t DI;
-//	uint16_t pulse;
-	/* Infinite loop */
-	for (;;)
-	{
-		osDelay(1);
-	}
+  /* Infinite loop */
+  for(;;)
+  {
+//	  HAL_GPIO_TogglePin(SPI_CS_GPIO_Port, SPI_CS_Pin);   // SS -> L
+	    osDelay(1);
+	 
+  }
   /* USER CODE END uMBpoll */
 }
 
 /* USER CODE BEGIN Application */
-
-//void user_pwm_setvalue(uint16_t value)
-//{
-//	TIM_OC_InitTypeDef sConfigOC;
-// 
-//	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-//	sConfigOC.Pulse = value;
-//	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-//	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-//	HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3);
-//	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);   
-//}
+     
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

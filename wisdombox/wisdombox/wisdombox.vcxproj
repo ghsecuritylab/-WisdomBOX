@@ -82,7 +82,6 @@
     <ClCompile Include="..\..\Src\i2c.c" />
     <ClCompile Include="..\..\Src\lwip.c" />
     <ClCompile Include="..\..\Src\ethernetif.c" />
-    <ClCompile Include="..\..\Src\syscalls.c" />
     <ClCompile Include="..\..\Src\spi.c" />
     <ClCompile Include="..\..\Src\tim.c" />
     <ClCompile Include="..\..\Src\usart.c" />
