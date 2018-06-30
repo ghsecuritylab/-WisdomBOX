@@ -154,6 +154,54 @@
     <Filter Include="Header files\STM32Cube HAL\IWDG">
       <UniqueIdentifier>{9441a09c-5713-4a31-9815-51d5c371e2a6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\freemodbustcp">
+      <UniqueIdentifier>{3d1ba7c6-c8ff-4418-9005-871f4534e0e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus">
+      <UniqueIdentifier>{1b1978c3-cead-4d06-96d9-02f182899ff9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus\ascii">
+      <UniqueIdentifier>{fcab0697-f338-4ad3-aa0c-aaf236ff2d72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus\functions">
+      <UniqueIdentifier>{65f25aa3-9dff-4e92-85b7-5047a08bb1cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus\include">
+      <UniqueIdentifier>{26550f66-6eb0-4e64-b209-aefc65700bd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus\rtu">
+      <UniqueIdentifier>{85e17eb4-90b3-4c42-bde8-a35869266202}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\modbus\tcp">
+      <UniqueIdentifier>{1ab3b6c7-f051-4e0a-8f05-8a06b6e93ebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\freemodbustcp\port">
+      <UniqueIdentifier>{6f4d6415-00f2-4381-bf97-8c85bff02158}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp">
+      <UniqueIdentifier>{de380c9e-7a52-4c49-9db2-55ec000d705e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus">
+      <UniqueIdentifier>{04caa8a2-321a-4dcf-a398-39ac50f3dc69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus\ascii">
+      <UniqueIdentifier>{7a68f5bd-aa3b-4fd0-962f-8134e5c866d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus\functions">
+      <UniqueIdentifier>{b062c1e9-0ab6-48e4-899d-cb0b959c8e43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus\include">
+      <UniqueIdentifier>{a997e5d3-b7b3-43c1-9daf-8c898942868f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus\rtu">
+      <UniqueIdentifier>{72f30035-aaca-4b59-b953-fad5b619259a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\modbus\tcp">
+      <UniqueIdentifier>{f5ff5aed-ab8f-4471-a8cb-1bb1466b2df9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\freemodbustcp\port">
+      <UniqueIdentifier>{573e3320-79ad-4bec-82b4-f8c5c3e1587d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\gpio.c">
@@ -172,9 +220,6 @@
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\spi.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\tim.c">
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\usart.c">
@@ -523,9 +568,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Inc\spi.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Inc\tim.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Inc\usart.h">
@@ -1035,5 +1077,107 @@
     <ClCompile Include="..\..\Src\freertos.c">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Src\syscalls.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\bsp\Src\R8025t.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\bsp\Inc\ADS1230.h">
+      <Filter>Header files\bsp\Inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\bsp\Inc\R8025t.h">
+      <Filter>Header files\bsp\Inc</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\bsp\Src\ADS1230.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\bsp\Src\stm32f4xx_nucleo_144.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\bsp\Inc\stm32f4xx_nucleo_144.h">
+      <Filter>Header files\bsp\Inc</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\freemodbustcp\modbus\mb.c">
+      <Filter>Source files\freemodbustcp\modbus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\ascii\mbascii.c">
+      <Filter>Source files\freemodbustcp\modbus\ascii</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfunccoils.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfuncdiag.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfuncdisc.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfuncholding.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfuncinput.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbfuncother.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\functions\mbutils.c">
+      <Filter>Source files\freemodbustcp\modbus\functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\rtu\mbcrc.c">
+      <Filter>Source files\freemodbustcp\modbus\rtu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\rtu\mbrtu.c">
+      <Filter>Source files\freemodbustcp\modbus\rtu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\modbus\tcp\mbtcp.c">
+      <Filter>Source files\freemodbustcp\modbus\tcp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\port\portevent.c">
+      <Filter>Source files\freemodbustcp\port</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\port\portother.c">
+      <Filter>Source files\freemodbustcp\port</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\freemodbustcp\port\porttcp.c">
+      <Filter>Source files\freemodbustcp\port</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\freemodbustcp\modbus\ascii\mbascii.h">
+      <Filter>Header files\freemodbustcp\modbus\ascii</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mb.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbconfig.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbframe.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbfunc.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbport.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbproto.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\include\mbutils.h">
+      <Filter>Header files\freemodbustcp\modbus\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\rtu\mbcrc.h">
+      <Filter>Header files\freemodbustcp\modbus\rtu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\rtu\mbrtu.h">
+      <Filter>Header files\freemodbustcp\modbus\rtu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\modbus\tcp\mbtcp.h">
+      <Filter>Header files\freemodbustcp\modbus\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\freemodbustcp\port\port.h">
+      <Filter>Header files\freemodbustcp\port</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

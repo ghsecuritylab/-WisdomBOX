@@ -22,58 +22,58 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "Relay.h"
-#include "tim.h"
+
 void relaycontrol(DO realynumber,u_int8_t DI)	
 {
 	switch (realynumber)
 	{
 	case DO1 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
 		break;
 	case DO2 :
-//		if (DI == 0) 
-//			HAL_GPIO_WritePin(REALY2_GPIO_Port,REALY2_Pin ,GPIO_PIN_RESET);
-//		else  
-//			HAL_GPIO_WritePin(REALY2_GPIO_Port, REALY2_Pin,GPIO_PIN_SET);
+		if (DI == 0) 
+			HAL_GPIO_WritePin(RELAY2_GPIO_Port,RELAY2_Pin ,GPIO_PIN_RESET);
+		else  
+			HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin,GPIO_PIN_SET);
 		break;
 	case DO3 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY3_GPIO_Port, REALY3_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY3_GPIO_Port, RELAY3_Pin, GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY3_GPIO_Port, REALY3_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY3_GPIO_Port, RELAY3_Pin, GPIO_PIN_SET);
 		break;
 	case DO4 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY4_GPIO_Port, RELAY4_Pin, GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY4_GPIO_Port, REALY4_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY4_GPIO_Port, RELAY4_Pin, GPIO_PIN_SET);
 		break;
 	case DO5 :
-//		if (DI == 0) 
-//			HAL_GPIO_WritePin(REALY5_GPIO_Port, REALY5_Pin,GPIO_PIN_RESET);
-//		else
-//			HAL_GPIO_WritePin(REALY5_GPIO_Port, REALY5_Pin,GPIO_PIN_SET);
+		if (DI == 0) 
+			HAL_GPIO_WritePin(RELAY5_GPIO_Port, RELAY5_Pin,GPIO_PIN_RESET);
+		else
+			HAL_GPIO_WritePin(RELAY5_GPIO_Port, RELAY5_Pin,GPIO_PIN_SET);
 		break;
 	case DO6 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY6_GPIO_Port, REALY6_Pin,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY6_GPIO_Port, RELAY6_Pin,GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY6_GPIO_Port, REALY6_Pin,GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY6_GPIO_Port, RELAY6_Pin,GPIO_PIN_SET);
 		break;
 	case DO7 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY7_GPIO_Port, REALY7_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY7_GPIO_Port, RELAY7_Pin, GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY7_GPIO_Port, REALY7_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY7_GPIO_Port, RELAY7_Pin, GPIO_PIN_SET);
 		break;
 	case DO8 :
 		if (DI == 0) 
-			HAL_GPIO_WritePin(REALY8_GPIO_Port, REALY8_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(RELAY8_GPIO_Port, RELAY8_Pin, GPIO_PIN_RESET);
 		else
-			HAL_GPIO_WritePin(REALY8_GPIO_Port, REALY8_Pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(RELAY8_GPIO_Port, RELAY8_Pin, GPIO_PIN_SET);
 		break;
 		
 	default:

@@ -51,11 +51,24 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-/* USER CODE BEGIN Includes */     
+/* USER CODE BEGIN Includes */ 
+
+/* ------------------------ LWIP includes --------------------------------- */
+#include "lwip/api.h"
+#include "lwip/tcpip.h"
+#include "lwip/memp.h"
+
+/* ------------------------ FreeModbus includes --------------------------- */
+#include "mb.h"
+#include "iwdg.h"
+/* ------------------------ Project includes ------------------------------ */
 #include "usart.h"
 #include "gpio.h"
 #include "iwdg.h"
 #include "DAC.h"
+#include "R8025t.h"
+#include "Relay.h"
+#include "ADS1230.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
@@ -64,10 +77,24 @@ osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId ledTaskHandle;
 osThreadId uMBpoll_taskHandle;
+osThreadId periodTaskHandle;
+osThreadId tcp_severTaskHandle;
 osMutexId MBholdingMutexHandle;
 
 /* USER CODE BEGIN Variables */
 
+//#define mainMB_TASK_PRIORITY    ( tskIDLE_PRIORITY + 3 )
+#define PROG                    "FreeModbus"
+#define REG_INPUT_START         1000
+#define REG_INPUT_NREGS         4
+#define REG_HOLDING_START       0
+#define REG_HOLDING_NREGS       130
+
+/* ----------------------- Static variables ---------------------------------*/
+static USHORT   usRegInputStart = REG_INPUT_START;
+static USHORT   usRegInputBuf[REG_INPUT_NREGS];
+static USHORT   usRegHoldingStart = REG_HOLDING_START;
+static USHORT   usRegHoldingBuf[REG_HOLDING_NREGS];
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
@@ -75,12 +102,14 @@ void StartDefaultTask(void const * argument);
 void vMBServerTask(void const * argument);
 void led(void const * argument);
 void uMBpoll(void const * argument);
+void period(void const * argument);
+void TCPsever(void const * argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
-
+extern STDATETIME stDateTime;
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -126,6 +155,14 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
   uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
 
+  /* definition and creation of periodTask */
+  osThreadDef(periodTask, period, osPriorityNormal, 0, 256);
+  periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
+
+  /* definition and creation of tcp_severTask */
+  osThreadDef(tcp_severTask, TCPsever, osPriorityAboveNormal, 0, 256);
+  tcp_severTaskHandle = osThreadCreate(osThread(tcp_severTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -155,12 +192,34 @@ void StartDefaultTask(void const * argument)
 void vMBServerTask(void const * argument)
 {
   /* USER CODE BEGIN vMBServerTask */
-  /* Infinite loop */
-  for(;;)
-  {
-	  TIM4->CCR4 = 500;
-    osDelay(100);
-  }
+
+	eMBErrorCode    xStatus;
+	
+	/* Infinite loop */
+	for (;;)
+	{
+		if (eMBTCPInit(MB_TCP_PORT_USE_DEFAULT) != MB_ENOERR)
+		{
+			//  fprintf(stderr, "%s: can't initialize modbus stack!\r\n", PROG);
+		}
+		else if (eMBEnable() != MB_ENOERR)
+		{
+			//  fprintf(stderr, "%s: can't enable modbus stack!\r\n", PROG);
+		}
+		else
+		{
+			do
+			{
+				osDelay(10);
+				xSemaphoreTake(MBholdingMutexHandle, (TickType_t)10);
+				xStatus = eMBPoll();
+			} while (xStatus == MB_ENOERR);
+		}
+		/* An error occured. Maybe we can restart. */
+		(void)eMBDisable();
+		(void)eMBClose();
+		osDelay(10);
+	}
   /* USER CODE END vMBServerTask */
 }
 
@@ -168,21 +227,19 @@ void vMBServerTask(void const * argument)
 void led(void const * argument)
 {
   /* USER CODE BEGIN led */
+	int32_t adctemp;
+	InitADline();
   /* Infinite loop */
-	char buff[32] =  {"hello\n\r"};
-	uint16_t dac;
   for(;;)
   {
-	  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_TogglePin(REALY6_GPIO_Port, REALY6_Pin);
-	  dac = 2000;
-	  spi1_dac_write_cha(dac);
-	  dac = 4000;
-	  spi1_dac_write_chb(dac);
-	  HAL_UART_Transmit(&huart1, (uint8_t *)& buff, 10, 0xFFFF);
+	  adctemp  = ReadAD();
+	  //	  usRegHoldingBuf[11] = adctemp <<16;
+	  //	  usRegHoldingBuf[11] |= adctemp;
+	  	//  dl = adctemp /
+	  	  printf("%x\n", (uint16_t) adctemp);
+	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 	  HAL_IWDG_Refresh(&hiwdg);
-//  printf("hello\r\n");
-    osDelay(1000);
+	  osDelay(1000);
   }
   /* USER CODE END led */
 }
@@ -191,18 +248,231 @@ void led(void const * argument)
 void uMBpoll(void const * argument)
 {
   /* USER CODE BEGIN uMBpoll */
-  /* Infinite loop */
-  for(;;)
-  {
-//	  HAL_GPIO_TogglePin(SPI_CS_GPIO_Port, SPI_CS_Pin);   // SS -> L
-	    osDelay(1);
-	 
-  }
+	uint8_t Relay;
+	uint8_t DI;
+	uint16_t dac;
+	/* Infinite loop */
+	for (;;)
+	{
+	
+		if (xSemaphoreTake(MBholdingMutexHandle, (TickType_t)portMAX_DELAY) == pdTRUE)
+		{
+			/********************************************************************************/		
+					/*set relay*/
+			for (Relay = 0; Relay < 8; Relay++)
+			{
+				DI = usRegHoldingBuf[Relay];
+				relaycontrol(Relay, DI);	 
+			}
+		
+			/*set 0-10v */
+			
+			dac = usRegHoldingBuf[12];
+			if (dac > 4095) dac = 4095;
+			spi1_dac_write_chb(dac);
+			spi1_dac_write_cha(dac);
+			
+							/************************************************/
+									xSemaphoreGive(MBholdingMutexHandle);
+			osDelay(10);
+		}
+		osDelay(10);
+	}
   /* USER CODE END uMBpoll */
 }
 
+/* period function */
+void period(void const * argument)
+{
+  /* USER CODE BEGIN period */
+  /* Infinite loop */
+	char * time_buf;
+	Init8025();
+  for(;;)
+  {
+	  UpdateDateTime();
+	  sprintf((char *)time_buf,
+		  "%04d-%02d-%02d %02d:%02d:%02d",
+		  stDateTime.year + 2000, 
+		  stDateTime.month,
+		  stDateTime.date,
+		  stDateTime.hour,
+		  stDateTime.minute,
+		  stDateTime.second);
+	  
+	  printf("%s\n", time_buf);
+    osDelay(500);
+  }
+  /* USER CODE END period */
+}
+
+/* TCPsever function */
+void TCPsever(void const * argument)
+{
+  /* USER CODE BEGIN TCPsever */
+  /* Infinite loop */
+		struct netconn *conn, *newconn;
+		err_t err, accept_err;
+		struct netbuf *buf;
+		char  tcpbuf;
+		uint8_t *data;
+		uint16_t Pulse;
+		u16_t len;
+	      
+		LWIP_UNUSED_ARG(argument);
+	
+		/* Create a new connection identifier. */
+		conn = netconn_new(NETCONN_TCP);
+	  
+		if (conn != NULL)
+		{  
+			/* Bind connection to well known port number 7. */
+			err = netconn_bind(conn, NULL,500);
+	    
+			if (err == ERR_OK)
+			{
+				/* Tell connection to go into listening mode. */
+				netconn_listen(conn);
+				for (;;)
+				{
+					/* */
+					accept_err = netconn_accept(conn, &newconn);
+	    
+					/* Process the new connection. */
+					if (accept_err == ERR_OK) 
+					{
+	
+						while (netconn_recv(newconn,&buf) == ERR_OK) 
+						{
+							
+							do 
+							{
+							//	taskDISABLE_INTERRUPTS(); 	
+								netbuf_data(buf, (void * *)&data, &len);
+								
+								if (data[0] == 0 && data[1] == 0x06)
+								{
+									if (data[2] == 0 && data[3] == 0x01) 
+									{
+										if (data[5] == 0) 	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
+										else	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
+									}	
+									else if (data[2] == 0 && data[3] == 0x0a) 
+									{
+										Pulse = ((uint16_t)data[4] << 8) | ((uint16_t)(data[5])); 
+										if (Pulse > 1000) Pulse = 1000;
+										
+										//TIM1->CCR1 = Pulse;
+					 				}	
+								}
+								netconn_write(newconn, data, len, NETCONN_COPY);
+							//	taskENABLE_INTERRUPTS();
+	          
+							} while (netbuf_next(buf) >= 0);
+	          
+							netbuf_delete(buf);
+						}
+	        
+						/* Close connection and discard connection identifier. */
+						netconn_close(newconn);
+						netconn_delete(newconn);
+					}
+					osDelay(1);
+				}
+			}
+			else
+			{
+				netconn_delete(newconn);
+			}
+		}
+  /* USER CODE END TCPsever */
+}
+
 /* USER CODE BEGIN Application */
-     
+eMBErrorCode
+eMBRegInputCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs)
+{
+	eMBErrorCode    eStatus = MB_ENOERR;
+	int             iRegIndex;
+
+	if ((usAddress >= REG_INPUT_START)
+	    && (usAddress + usNRegs <= REG_INPUT_START + REG_INPUT_NREGS))
+	{
+		iRegIndex = (int)(usAddress - usRegInputStart);
+		while (usNRegs > 0)
+		{
+			*pucRegBuffer++ = (unsigned char)(usRegInputBuf[iRegIndex] >> 8);
+			*pucRegBuffer++ = (unsigned char)(usRegInputBuf[iRegIndex] & 0xFF);
+			iRegIndex++;
+			usNRegs--;
+		}
+	}
+	else
+	{
+		eStatus = MB_ENOREG;
+	}
+	return eStatus;
+}
+
+eMBErrorCode
+eMBRegHoldingCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs, eMBRegisterMode eMode)
+{
+	eMBErrorCode    eStatus = MB_ENOERR;
+	int             iRegIndex;
+
+	if ((usAddress >= REG_HOLDING_START) &&
+	    (usAddress + usNRegs <= REG_HOLDING_START + REG_HOLDING_NREGS))
+	{
+		iRegIndex = (int)(usAddress - usRegHoldingStart);
+		switch (eMode)
+		{
+			/* Pass current register values to the protocol stack. */
+		case MB_REG_READ:
+			while (usNRegs > 0)
+			{
+				*pucRegBuffer++ = (UCHAR)(usRegHoldingBuf[iRegIndex] >> 8);
+				*pucRegBuffer++ = (UCHAR)(usRegHoldingBuf[iRegIndex] & 0xFF);
+				iRegIndex++;
+				usNRegs--;
+			}
+			break;
+
+			/* Update current register values with new values from the
+			 * protocol stack. */
+		case MB_REG_WRITE:
+			if (usNRegs != 0)
+			{
+				
+				while (usNRegs > 0)
+				{
+					usRegHoldingBuf[iRegIndex] = *pucRegBuffer++ << 8;
+					usRegHoldingBuf[iRegIndex] |= *pucRegBuffer++;
+					iRegIndex++;
+					usNRegs--;
+				}
+				xSemaphoreGive(MBholdingMutexHandle);
+				
+			}
+		}
+	}
+	else
+	{
+		eStatus = MB_ENOREG;
+	}
+	return eStatus;
+}
+
+eMBErrorCode
+eMBRegCoilsCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNCoils, eMBRegisterMode eMode)
+{
+	return MB_ENOREG;
+}
+
+eMBErrorCode
+eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete)
+{
+	return MB_ENOREG;
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

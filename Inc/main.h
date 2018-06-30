@@ -60,20 +60,32 @@
 
 /* Private define ------------------------------------------------------------*/
 
-#define SPI_CS_Pin GPIO_PIN_0
-#define SPI_CS_GPIO_Port GPIOB
-#define REALY4_Pin GPIO_PIN_7
-#define REALY4_GPIO_Port GPIOE
-#define REALY3_Pin GPIO_PIN_8
-#define REALY3_GPIO_Port GPIOE
-#define RELAY1_Pin GPIO_PIN_10
+#define LED_GREEN_Pin GPIO_PIN_1
+#define LED_GREEN_GPIO_Port GPIOB
+#define LED_RED_Pin GPIO_PIN_2
+#define LED_RED_GPIO_Port GPIOB
+#define RELAY1_Pin GPIO_PIN_7
 #define RELAY1_GPIO_Port GPIOE
-#define REALY6_Pin GPIO_PIN_6
-#define REALY6_GPIO_Port GPIOC
-#define REALY7_Pin GPIO_PIN_7
-#define REALY7_GPIO_Port GPIOC
-#define REALY8_Pin GPIO_PIN_8
-#define REALY8_GPIO_Port GPIOC
+#define RELAY2_Pin GPIO_PIN_8
+#define RELAY2_GPIO_Port GPIOE
+#define RELAY3_Pin GPIO_PIN_9
+#define RELAY3_GPIO_Port GPIOE
+#define RELAY4_Pin GPIO_PIN_10
+#define RELAY4_GPIO_Port GPIOE
+#define RX8025INT_Pin GPIO_PIN_14
+#define RX8025INT_GPIO_Port GPIOE
+#define SPI2_CS_Pin GPIO_PIN_15
+#define SPI2_CS_GPIO_Port GPIOE
+#define WDI_Pin GPIO_PIN_9
+#define WDI_GPIO_Port GPIOA
+#define RELAY5_Pin GPIO_PIN_0
+#define RELAY5_GPIO_Port GPIOD
+#define RELAY6_Pin GPIO_PIN_1
+#define RELAY6_GPIO_Port GPIOD
+#define RELAY7_Pin GPIO_PIN_2
+#define RELAY7_GPIO_Port GPIOD
+#define RELAY8_Pin GPIO_PIN_3
+#define RELAY8_GPIO_Port GPIOD
 #define _485DIR_Pin GPIO_PIN_8
 #define _485DIR_GPIO_Port GPIOB
 

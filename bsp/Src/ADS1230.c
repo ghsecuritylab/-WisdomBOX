@@ -1,8 +1,8 @@
-/*******************************************************************************
-// ËµÃ÷: Í·ÎÄ¼þÉùÃ÷
+ï»¿/*******************************************************************************
+// è¯´æ˜Ž: å¤´æ–‡ä»¶å£°æ˜Ž
 *******************************************************************************/
 #include "ADS1230.h"
-#include "stm32f7xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include "spi.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -13,8 +13,9 @@
 
 void delay_us(uint16_t us)
 {
+//	osDelay(us);
 	uint16_t i;
-	for (i = 0; i < (us*200); i++)
+	for (i = 0; i < (us*1000); i++)
 	{
 		asm("NOP");
 	} 
@@ -56,73 +57,115 @@ uint32_t DWT_Delay_Init(void) {
 	}
 }
 /*****************************************************************************
-º¯ÊýÃû³Æ£ºReadAD(void)
-¹¦    ÄÜ£º¶ÁAD
-Èë¿Ú²ÎÊý£ºÎÞ
-·µ»Ø²ÎÊý£ºADµÄ×ª»»½á¹û£¬ÎªlongÐÍ
-Ê¹ÓÃ×ÊÔ´£ºÎÞ
+å‡½æ•°åç§°ï¼šReadAD(void)
+åŠŸ    èƒ½ï¼šè¯»AD
+å…¥å£å‚æ•°ï¼šæ— 
+è¿”å›žå‚æ•°ï¼šADçš„è½¬æ¢ç»“æžœï¼Œä¸ºlongåž‹
+ä½¿ç”¨èµ„æºï¼šæ— 
 ******************************************************************************/
 
-int32_t _raw;
 
 int32_t ReadAD(void)
 {
-	for (int8_t a = 0; a < 20; a++) {
-		HAL_GPIO_WritePin(spi_sck_GPIO_Port, spi_sck_Pin, GPIO_PIN_SET);  
-		delay_us(1);
-		_raw <<= 1;
-		_raw |= HAL_GPIO_ReadPin(spi_miso_GPIO_Port, spi_miso_Pin);
-		delay_us(1);
-		HAL_GPIO_WritePin(spi_sck_GPIO_Port, spi_sck_Pin, GPIO_PIN_RESET);  
-		delay_us(2);
-	}
-	_raw <<= 12;
-	return _raw;
+	int32_t ADdatatemp = 0; 
+	int16_t _raw;
+	HAL_SPI_Receive(&hspi2, (uint8_t *)& ADdatatemp, 2, 100);
+//	ADdatatemp = _raw << 16;
+//	ADdatatemp |= _raw;
+	//	int32_t ADdatatemp = 0; 
+	//	for (uint8_t i = 0; i < 20; i++)            //èŽ·å–20ä½æ•°æ®
+	//		{
+	//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);   
+	//			delay_us(1);
+	//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);   
+	//			ADdatatemp = ADdatatemp << 1;
+	//			if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4))                     //ADè¾“å‡ºçš„æ•°æ®ä½æ˜¯1ï¼Ÿ
+	//				{
+	//					ADdatatemp++;
+	//				}
+	//		}    
+	////	for (uint8_t i = 0; i < 4; i++)             //ä¸ºä¸‹ä¸€æ¬¡è½¬æ¢å‡†å¤‡
+	////		{
+	////			HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_SET);  
+	////			 delay_us(1);
+	////			HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_RESET);                          //ADS_OUT &= ~ADS_CLK_BIT;
+	////		}
+//		ADdatatemp <<= 6;
+	ADdatatemp &= 0x000fffff;
+	return (ADdatatemp);
+//	int32_t _raw;
+//	for (int8_t a = 0; a < 20; a++) {
+//		HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_SET);  
+//		delay_us(1);
+//		_raw <<= 1;
+//		_raw |=  HAL_GPIO_ReadPin(adc_in_GPIO_Port, adc_in_Pin);
+//		//delay_us(1);
+//		HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_RESET);  
+//		delay_us(1);
+//	}
+//	_raw <<= 6;
+//	_raw &= 0x000fffff;
+//	return _raw;
 }
 
 
 /*****************************************************************************
-º¯ÊýÃû³Æ£ºvoid OffsetAD()
-¹¦    ÄÜ£ºÒ»¸ö²¹³¥º¯Êý£¬²¹³¥AD1230µÄ±ê³ßÎó²î
-Èë¿Ú²ÎÊý£ºÎÞ
-·µ»Ø²ÎÊý£ºÎÞ
-Ê¹ÓÃ×ÊÔ´£ºÎÞ
+å‡½æ•°åç§°ï¼švoid OffsetAD()
+åŠŸ    èƒ½ï¼šä¸€ä¸ªè¡¥å¿å‡½æ•°ï¼Œè¡¥å¿AD1230çš„æ ‡å°ºè¯¯å·®
+å…¥å£å‚æ•°ï¼šæ— 
+è¿”å›žå‚æ•°ï¼šæ— 
+ä½¿ç”¨èµ„æºï¼šæ— 
 ******************************************************************************/
 void OffsetAD()
 {
-	for (int8_t a = 0; a < 26; a++) {
-		HAL_GPIO_WritePin(spi_sck_GPIO_Port, spi_sck_Pin, GPIO_PIN_SET);  
-		delay_us(2);
-		HAL_GPIO_WritePin(spi_sck_GPIO_Port, spi_sck_Pin, GPIO_PIN_RESET);  
-		delay_us(2);
-	} 
+	uint8_t time = 20;
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)&&time)
+	{
+		time--;
+		if (time==0)
+		{
+			printf("adcåˆå§‹åŒ–é”™\n");
+		}
+		osDelay(100);
+	}
+	HAL_SPI_Transmit(&hspi2, 0, 2, 100);
+//	for (int8_t a = 0; a < 26; a++) {
+//		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);  
+//		delay_us(2);
+//		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);  
+//		delay_us(2);
+//	} 
 }
 void wakeUp()
 {
-	HAL_GPIO_WritePin(spi2_cs_GPIO_Port, spi2_cs_Pin, GPIO_PIN_SET); 
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET); 
 }
 
 void powerDown()
 {
-	HAL_GPIO_WritePin(spi2_cs_GPIO_Port, spi2_cs_Pin, GPIO_PIN_RESET); 
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET); 
 }
 
 /*****************************************************************************
-º¯ÊýÃû³Æ£ºvoid InitADline(void)
-¹¦    ÄÜ£º³õÊ¼»¯AD¿ØÖÆÏß
-Èë¿Ú²ÎÊý£ºÎÞ
-·µ»Ø²ÎÊý£ºÎÞ
-Ê¹ÓÃ×ÊÔ´£ºport2
+å‡½æ•°åç§°ï¼švoid InitADline(void)
+åŠŸ    èƒ½ï¼šåˆå§‹åŒ–ADæŽ§åˆ¶çº¿
+å…¥å£å‚æ•°ï¼šæ— 
+è¿”å›žå‚æ•°ï¼šæ— 
+ä½¿ç”¨èµ„æºï¼šport2
 ******************************************************************************/
 void InitADline(void)
 {
-//	if (DWT_Delay_Init())
-//	{
-//		Error_Handler(); /* Call Error Handler */
-//	}
+	//	if (DWT_Delay_Init())
+	//	{
+	//		Error_Handler(); /* Call Error Handler */
+	//	}
+    powerDown();
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);  
+	osDelay(100);
 	wakeUp();
+	
 	osDelay(100);
 	OffsetAD();
 
-    //Æô¶¯×ª»»
+    //å¯åŠ¨è½¬æ¢
 }

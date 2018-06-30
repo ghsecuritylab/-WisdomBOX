@@ -33,18 +33,18 @@ inline void spi1_dac_write_cha(uint16_t word) {
 
 //	 word &= 0x0fff ;	// strip any unwanted bits
 	word |= 0x1000;
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET); // SS -> L
-	HAL_SPI_Transmit(&hspi1,(uint8_t *)&word, 1, 100);
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET); // SS -> L
+	HAL_SPI_Transmit(&hspi2,(uint8_t *)&word, 1, 100);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
 }
 
 inline void spi1_dac_write_chb(uint16_t word) {
 
 //	 word &= 0x0fff ;	// strip any unwanted bits
 	word |= 0x9000;
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);   // SS -> L
-	HAL_SPI_Transmit(&hspi1, (uint8_t *)&word, 1, 100);
-	HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);       // SS -> L
+	HAL_SPI_Transmit(&hspi2, (uint8_t *)&word, 1, 100);
+	HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_SET);
 	
 }
 

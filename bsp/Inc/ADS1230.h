@@ -1,9 +1,9 @@
-#ifndef __ADS1230_H
+﻿#ifndef __ADS1230_H
 #define __ADS1230_H
 #include "gpio.h"
 /**********************************************************************
                       ADS1230
-*   �ӿڶ��壺DOUT<--->P2.0; SCLK<--->P2.1; PDWN<--->P2.2   *
+*   接口定义：DOUT<--->P2.0; SCLK<--->P2.1; PDWN<--->P2.2   *
 ***********************************************************************/
 //#define ADS_IE                  P2IE
 //#define ADS_IFG                 P2IFG
@@ -37,7 +37,7 @@
 
 
 #define ADS_DATA_HI              HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14)
-//#define ADS_DATA_NOT_READY      (ADS_IN & ADS_DATA_BIT)//AD_CLK���λ1
+//#define ADS_DATA_NOT_READY      (ADS_IN & ADS_DATA_BIT)//AD_CLK输出位1
 
 uint32_t DWT_Delay_Init(void);
 
@@ -57,8 +57,8 @@ __STATIC_INLINE void DWT_Delay_us(volatile uint32_t microseconds)
 }
 
 
-int32_t  ReadAD(void);     //��AD�����������϶�ȡAD���������,���ڲ�ѯ���ж��е���
-void  OffsetAD(void);  //ʧ��У׼��һ������������AD�󣬽���һ��ADУ׼
-void  InitADline(void);//��ʼ��AD�����ߣ�������ADǰ����
+int32_t  ReadAD(void);         //读AD，从数据线上读取AD输出的数据,可在查询或中断中调用
+void  OffsetAD(void);  //失调校准，一般用来在启动AD后，进行一次AD校准
+void  InitADline(void);//初始化AD控制线，在启动AD前调用
 #endif
 /************************************END***************************************/
