@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+/wisdombox/.vs/wisdombox/v15
+/wisdombox/VisualGDB/Debug/CodeDB/wisdombox/AutoPCH
+/wisdombox/VisualGDB/Debug/CodeDB/wisdombox/GlobalCache/000
+/wisdombox/VisualGDB/Debug
+/wisdombox/wisdombox/VisualGDB/Debug
+/wisdombox/wisdombox/VisualGDB/VisualGDBCache/wisdombox-Debug

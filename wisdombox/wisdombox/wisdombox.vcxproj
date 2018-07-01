@@ -41,16 +41,16 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../bsp/Inc;../../freemodbustcp/modbus/include;../../freemodbustcp/port;C:/sysgcc/arm-eabi/arm-eabi/include/c++/7.2.0;..\..\Inc;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\..\Drivers\STM32F4xx_HAL_Driver\Inc;..\..\Middlewares\Third_Party\FreeRTOS\Source\include;..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\..\Middlewares\Third_Party\LwIP\src\include;..\..\Middlewares\Third_Party\LwIP\src\include\lwip;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot;..\..\Middlewares\Third_Party\LwIP\src\include\netif;..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp;..\..\Middlewares\Third_Party\LwIP\src\include\posix;..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys;..\..\Middlewares\Third_Party\LwIP\system;..\..\Middlewares\Third_Party\LwIP\system\arch;..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;../../freemodbustcp/modbus/tcp;../../freemodbustcp/modbus/ascii;../../freemodbustcp/modbus/rtu;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../bsp/Inc;../../freemodbustcp/modbus/include;../../freemodbustcp/port;C:/sysgcc/arm-eabi/arm-eabi/include/c++/7.2.0;../../freemodbustcp/modbus/tcp;../../freemodbustcp/modbus/ascii;../../freemodbustcp/modbus/rtu;..\..\Inc;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\..\Drivers\STM32F4xx_HAL_Driver\Inc;..\..\Middlewares\Third_Party\FreeRTOS\Source\include;..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\..\Middlewares\Third_Party\LwIP\src\include;..\..\Middlewares\Third_Party\LwIP\src\include\lwip;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot;..\..\Middlewares\Third_Party\LwIP\src\include\netif;..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp;..\..\Middlewares\Third_Party\LwIP\src\include\posix;..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys;..\..\Middlewares\Third_Party\LwIP\system;..\..\Middlewares\Third_Party\LwIP\system\arch;..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;flash_layout;STM32F407xx;USE_FREERTOS;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions />
       <CLanguageStandard />
       <CPPLanguageStandard />
     </ClCompile>
     <Link>
-      <LibrarySearchDirectories>;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
-      <AdditionalLibraryNames>;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
-      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <AdditionalLinkerInputs>%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
       <AdditionalOptions />
       <LinkerScript />
     </Link>

@@ -1,4 +1,4 @@
-Ôªø/**
+/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -51,7 +51,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-/* USER CODE BEGIN Includes */ 
+/* USER CODE BEGIN Includes */     
 
 /* ------------------------ LWIP includes --------------------------------- */
 #include "lwip/api.h"
@@ -72,10 +72,9 @@
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
-
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
-osThreadId ledTaskHandle;
+osThreadId monitorTaskHandle;
 osThreadId uMBpoll_taskHandle;
 osThreadId periodTaskHandle;
 osThreadId tcp_severTaskHandle;
@@ -100,7 +99,7 @@ static USHORT   usRegHoldingBuf[REG_HOLDING_NREGS];
 /* Function prototypes -------------------------------------------------------*/
 void StartDefaultTask(void const * argument);
 void vMBServerTask(void const * argument);
-void led(void const * argument);
+void monitor(void const * argument);
 void uMBpoll(void const * argument);
 void period(void const * argument);
 void TCPsever(void const * argument);
@@ -147,16 +146,16 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
   mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
 
-  /* definition and creation of ledTask */
-  osThreadDef(ledTask, led, osPriorityBelowNormal, 0, 128);
-  ledTaskHandle = osThreadCreate(osThread(ledTask), NULL);
+  /* definition and creation of monitorTask */
+  osThreadDef(monitorTask, monitor, osPriorityNormal, 0, 128);
+  monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
 
   /* definition and creation of uMBpoll_task */
   osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
   uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
 
   /* definition and creation of periodTask */
-  osThreadDef(periodTask, period, osPriorityNormal, 0, 256);
+  osThreadDef(periodTask, period, osPriorityBelowNormal, 0, 256);
   periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
 
   /* definition and creation of tcp_severTask */
@@ -223,25 +222,24 @@ void vMBServerTask(void const * argument)
   /* USER CODE END vMBServerTask */
 }
 
-/* led function */
-void led(void const * argument)
+/* monitor function */
+void monitor(void const * argument)
 {
-  /* USER CODE BEGIN led */
-	int32_t adctemp;
-	InitADline();
+  /* USER CODE BEGIN monitor */
+	MX_IWDG_Init();
+	static portTickType xLastWakeTime;  
+	const portTickType xFrequency = pdMS_TO_TICKS(1000);  
+   
+	//  π”√µ±«∞ ±º‰≥ı ºªØ±‰¡øxLastWakeTime ,◊¢“‚’‚∫ÕvTaskDelay()∫Ø ˝≤ªÕ¨ 
+	xLastWakeTime = xTaskGetTickCount();
   /* Infinite loop */
   for(;;)
   {
-	  adctemp  = ReadAD();
-	  //	  usRegHoldingBuf[11] = adctemp <<16;
-	  //	  usRegHoldingBuf[11] |= adctemp;
-	  	//  dl = adctemp /
-	  	  printf("%x\n", (uint16_t) adctemp);
 	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 	  HAL_IWDG_Refresh(&hiwdg);
-	  osDelay(1000);
+	  vTaskDelayUntil(&xLastWakeTime, xFrequency); 
   }
-  /* USER CODE END led */
+  /* USER CODE END monitor */
 }
 
 /* uMBpoll function */

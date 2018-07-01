@@ -49,7 +49,7 @@
     <AllDependencies>
       <ProjectDependency>
         <RelativePath>..\..\MBcontrol.gpdsc</RelativePath>
-        <Timestamp>131748278601673568</Timestamp>
+        <Timestamp>131749302116336797</Timestamp>
       </ProjectDependency>
     </AllDependencies>
     <RootDirectory>
@@ -1070,25 +1070,25 @@
       <ImportedConfiguration>
         <Settings>
           <IncludeDirectories>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Inc</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\CMSIS\Include</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\STM32F4xx_HAL_Driver\Inc</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\include</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\netif</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\posix</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\system</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\system\arch</string>
-            <string>D:\Firmware\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Inc</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\CMSIS\Include</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\STM32F4xx_HAL_Driver\Inc</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\include</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\netif</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\posix</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\system</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Middlewares\Third_Party\LwIP\system\arch</string>
+            <string>E:\-WisdomBOX\wisdombox\wisdombox\..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy</string>
           </IncludeDirectories>
           <PreprocessorMacros>
             <string>$$com.sysprogs.bspoptions.primary_memory$$_layout</string>

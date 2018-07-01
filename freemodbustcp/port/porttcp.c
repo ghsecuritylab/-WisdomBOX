@@ -1,3 +1,4 @@
+
 /*
  * FreeModbus Libary: lwIP Port
  * Copyright (C) 2006 Christian Walter <wolti@sil.at>
@@ -21,7 +22,7 @@
 
 /* ----------------------- System includes ----------------------------------*/
 #include <stdio.h>
-
+#include <string.h>
 #include "port.h"
 
 /* ----------------------- lwIP includes ------------------------------------*/

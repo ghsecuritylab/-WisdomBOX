@@ -58,7 +58,7 @@
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
 #endif
-#define MB_TCP_DEBUG            1       /* Debug output in TCP module. */
+#define MB_TCP_DEBUG           0       /* Debug output in TCP module. */
 /* ----------------------- Type definitions ---------------------------------*/
 typedef char    BOOL;
 
