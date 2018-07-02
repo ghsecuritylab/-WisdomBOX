@@ -32,59 +32,52 @@ uint8_t DEC2BCD(uint8_t temp)
 
 void Get8025(uint8_t addr, uint8_t *data, uint8_t counter)//I2C_RX8025SA_ADDR
 { 
-	HAL_I2C_Mem_Read(&hi2c3, RX8025_ADDR_READ, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
-	
-//	uint8_t i;
-//    I2C_Start();
-//    I2C_SendByte(0x64);
-//    I2C_SendByte(addr);
-//    I2C_Start();
-//    I2C_SendByte(0x65);
-//    for (i = 0;  i < counter - 1 ;  i++)
-//      *data++ = I2C_ReceiveByte(false);
-//    *data++ = I2C_ReceiveByte(true);
-//    I2C_Stop();
+	HAL_I2C_Mem_Read(&hi2c3, RX8025_ADDR_WRITE, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
 } 
 
 void Set8025(uint8_t addr, uint8_t *data, uint8_t counter)
 { 
 	HAL_I2C_Mem_Write(&hi2c3, RX8025_ADDR_WRITE, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
-//	uint8_t i;
-//   I2C_Start();
-//   I2C_SendByte(0x64);
-//   I2C_SendByte(addr);
-//   for(i = 0; i <counter; i++) 
-//     I2C_SendByte(*data++);
-//   I2C_Stop();
 }
-
+uint8_t       temp[3], pubRam = 0xff; 
+uint8_t da[5];
 void Init8025(void)
 {   
-	uint8_t       temp,       pubRam[3]; 
-	uint8_t da[3];
-    da[0]=0x00;
-    da[1]=0x00;         // 24小时模式设置,1Hz  频率输出
-    da[2]=0x60;
-	Set8025(REGADDR_EXTEN,& da[0], 1);
-	Set8025(REGADDR_FLAG,& da[1], 1);
-	Set8025(REGADDR_CONTROL,& da[2], 1);
-//    memset(pubRam,0XFF,3);
-//    Get8025(RTC8025T_Control1,pubRam,3);
-    
-    if(pubRam[2] != da[2])
-    {
-      specialFlag.I2C8025F = 1;
-    }
-    else
-    {
-      specialFlag.I2C8025F = 0;
-    }
 	/* 电源复位检测功能 */
-	Get8025(RTC8025T_Control1,&temp, 1);
-	printf("old:%d\n", temp);
+	Get8025(REGADDR_EXTEN, temp, 3);
+	printf("old:%d\n\r", temp[0]);
+	temp[1] &= RTC8025_PON;
+	if (temp[1] == RTC8025_PON) //电源复位
+	{
+		da[0] = 0x00;
+		da[1] = 0x00;          // 24小时模式设置,1Hz  频率输出
+		da[2] = 0x00;
+		da[3] = 0x00;
+		da[4] = 0x60;  //0x68 (‭01101000‬)开启报警和跟新中断 0x60(‭01100000‬)之开启更新中断
+		Set8025(REGADDR_TIM_CNT0, & da[0], 1);
+		Set8025(REGADDR_TIM_CNT1, & da[1], 1);
+		Set8025(REGADDR_EXTEN, & da[2], 1);
+		Set8025(REGADDR_FLAG, & da[3], 1);
+		Set8025(REGADDR_CONTROL, & da[4], 1);
+		//    memset(pubRam,0XFF,1);
+		    Get8025(REGADDR_CONTROL, &pubRam, 1);
+    
+		if (pubRam != da[4])
+		{
+			specialFlag.I2C8025F = 1;
+		}
+		else
+		{
+			specialFlag.I2C8025F = 0;
+		}
+		RtcSetLocalTime();
+	}
+ 
+	
+	
 //	Set8025(RTC8025T_Control1, 0, 1);        //清除标志位，为下次做准备
-	printf("new:%d\n", temp);
-//	RtcSetLocalTime();
+//	printf("new:%d\n", temp);
+//
 }  
 
 void TimerDataHandle(uint8_t* pDate)
@@ -146,7 +139,7 @@ void RtcSetLocalTime()
   set_time.hour    = 17;//now_ptm->tm_hour;      //取值区间为[0,23]
   set_time.week    = 1;//now_ptm->tm_wday;      //取值区间为[0,6]，0为星期天
   set_time.date    = 2;//now_ptm->tm_mday;      //取值区间为[1,31]
-  set_time.month   = 6;// now_ptm->tm_mon + 1;   //取值区间为[0,11] ，0为1月
+  set_time.month   = 7;// now_ptm->tm_mon + 1;   //取值区间为[0,11] ，0为1月
   set_time.year    = 18;// now_ptm->tm_year - 100;//tm的年从1900开始计算
   set_time.reserve = 0;  
   

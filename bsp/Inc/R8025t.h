@@ -78,7 +78,7 @@ typedef enum { false = 0, true = !false } bool;
 #define	RTC8025T_Control1     (0x0D)  //控制1 寄存器 （R8025T） 
 #define	RTC8025_Control1      (0x0E)  //控制1 寄存器  (R8025AC)
 
-#define	RTC8025_PON           (0x10)  // RTC电源失效标志位
+#define	RTC8025_PON           (0x02)  // RTC电源失效标志位
 #define	RTC8025_XST           (0x20)  // RTC内部晶振失效标志位
 
 // 工作模式定义

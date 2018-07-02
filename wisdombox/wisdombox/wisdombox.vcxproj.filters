@@ -1077,9 +1077,6 @@
     <ClCompile Include="..\..\Src\freertos.c">
       <Filter>Source files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\syscalls.c">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\bsp\Src\R8025t.c">
       <Filter>Source files\bsp\Src</Filter>
     </ClCompile>
@@ -1179,5 +1176,8 @@
     <ClInclude Include="..\..\freemodbustcp\port\port.h">
       <Filter>Header files\freemodbustcp\port</Filter>
     </ClInclude>
+    <ClCompile Include="..\..\Src\syscalls.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
