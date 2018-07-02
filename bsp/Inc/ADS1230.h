@@ -39,22 +39,6 @@
 #define ADS_DATA_HI              HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14)
 //#define ADS_DATA_NOT_READY      (ADS_IN & ADS_DATA_BIT)//AD_CLK输出位1
 
-uint32_t DWT_Delay_Init(void);
-
-/**
- * @brief  This function provides a delay (in microseconds)
- * @param  microseconds: delay in microseconds
- */
-__STATIC_INLINE void DWT_Delay_us(volatile uint32_t microseconds)
-{
-	uint32_t clk_cycle_start = DWT->CYCCNT;
-
-	/* Go to number of cycles for system */
-	microseconds *= (HAL_RCC_GetHCLKFreq() / 1000000);
-    
-	/* Delay till end */
-	while ((clk_cycle_start-DWT->CYCCNT ) < microseconds) ;
-}
 
 
 int32_t  ReadAD(void);         //读AD，从数据线上读取AD输出的数据,可在查询或中断中调用

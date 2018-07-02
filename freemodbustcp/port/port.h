@@ -1,4 +1,4 @@
- /*
+﻿ /*
   * FreeModbus Libary: MCF5235 Port
   * Copyright (C) 2006 Christian Walter <wolti@sil.at>
   * Parts of crt0.S Copyright (c) 1995, 1996, 1998 Cygnus Support
@@ -58,7 +58,7 @@
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
 #endif
-#define MB_TCP_DEBUG           0       /* Debug output in TCP module. */
+//#define MB_TCP_DEBUG           0       /* Debug output in TCP module. */
 /* ----------------------- Type definitions ---------------------------------*/
 typedef char    BOOL;
 
@@ -71,7 +71,7 @@ typedef short   SHORT;
 typedef unsigned long ULONG;
 typedef long    LONG;
 
-#ifdef MB_TCP_DEBUG
+//#ifdef MB_TCP_DEBUG
 typedef enum
 {
     MB_LOG_DEBUG,
@@ -79,7 +79,7 @@ typedef enum
     MB_LOG_WARN,
     MB_LOG_ERROR
 } eMBPortLogLevel;
-#endif
+//#endif
 
 /* ----------------------- Function prototypes ------------------------------*/
 #ifdef MB_TCP_DEBUG

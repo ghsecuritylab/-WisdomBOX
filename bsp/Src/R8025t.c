@@ -13,7 +13,7 @@ SPECIALFLAG     specialFlag;
 
 
 //DEVSTATE        devState;
-uint8_t              pubRam[32]; 
+
 
 
 //BCD码转二位十进制
@@ -32,7 +32,7 @@ uint8_t DEC2BCD(uint8_t temp)
 
 void Get8025(uint8_t addr, uint8_t *data, uint8_t counter)//I2C_RX8025SA_ADDR
 { 
-	HAL_I2C_Mem_Read(&hi2c3, I2C_RX8025SA_ADDR, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
+	HAL_I2C_Mem_Read(&hi2c3, RX8025_ADDR_READ, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
 	
 //	uint8_t i;
 //    I2C_Start();
@@ -48,7 +48,7 @@ void Get8025(uint8_t addr, uint8_t *data, uint8_t counter)//I2C_RX8025SA_ADDR
 
 void Set8025(uint8_t addr, uint8_t *data, uint8_t counter)
 { 
-	HAL_I2C_Mem_Write(&hi2c3, I2C_RX8025SA_ADDR, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
+	HAL_I2C_Mem_Write(&hi2c3, RX8025_ADDR_WRITE, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
 //	uint8_t i;
 //   I2C_Start();
 //   I2C_SendByte(0x64);
@@ -60,13 +60,16 @@ void Set8025(uint8_t addr, uint8_t *data, uint8_t counter)
 
 void Init8025(void)
 {   
+	uint8_t       temp,       pubRam[3]; 
 	uint8_t da[3];
     da[0]=0x00;
     da[1]=0x00;         // 24小时模式设置,1Hz  频率输出
     da[2]=0x60;
-    Set8025(RTC8025T_Control1,da,3);
-    memset(pubRam,0,3);
-    Get8025(RTC8025T_Control1,pubRam,3);
+	Set8025(REGADDR_EXTEN,& da[0], 1);
+	Set8025(REGADDR_FLAG,& da[1], 1);
+	Set8025(REGADDR_CONTROL,& da[2], 1);
+//    memset(pubRam,0XFF,3);
+//    Get8025(RTC8025T_Control1,pubRam,3);
     
     if(pubRam[2] != da[2])
     {
@@ -76,6 +79,12 @@ void Init8025(void)
     {
       specialFlag.I2C8025F = 0;
     }
+	/* 电源复位检测功能 */
+	Get8025(RTC8025T_Control1,&temp, 1);
+	printf("old:%d\n", temp);
+//	Set8025(RTC8025T_Control1, 0, 1);        //清除标志位，为下次做准备
+	printf("new:%d\n", temp);
+//	RtcSetLocalTime();
 }  
 
 void TimerDataHandle(uint8_t* pDate)
@@ -132,18 +141,40 @@ void RtcSetLocalTime()
 //  timep = time(NULL);                       //获取当前RTC时间戳
 //  timep += 8 * 3600;                        //RTC时间戳转化成北京时间的时间戳  
 //  now_ptm = gmtime(&timep);                 //指针指向结构体中所存为十进制
-//  set_time.second  = now_ptm->tm_sec;       //取值区间为[0,59]
-//  set_time.minute  = now_ptm->tm_min;       //取值区间为[0,59]
-//  set_time.hour    = now_ptm->tm_hour;      //取值区间为[0,23]
-//  set_time.week    = now_ptm->tm_wday;      //取值区间为[0,6]，0为星期天
-//  set_time.date    = now_ptm->tm_mday;      //取值区间为[1,31]
-//  set_time.month   = now_ptm->tm_mon + 1;   //取值区间为[0,11] ，0为1月
-//  set_time.year    = now_ptm->tm_year - 100;//tm的年从1900开始计算
-//  set_time.reserve = 0;  
+  set_time.second  = 0;//now_ptm->tm_sec;       //取值区间为[0,59]
+  set_time.minute  = 0;//now_ptm->tm_min;       //取值区间为[0,59]
+  set_time.hour    = 17;//now_ptm->tm_hour;      //取值区间为[0,23]
+  set_time.week    = 1;//now_ptm->tm_wday;      //取值区间为[0,6]，0为星期天
+  set_time.date    = 2;//now_ptm->tm_mday;      //取值区间为[1,31]
+  set_time.month   = 6;// now_ptm->tm_mon + 1;   //取值区间为[0,11] ，0为1月
+  set_time.year    = 18;// now_ptm->tm_year - 100;//tm的年从1900开始计算
+  set_time.reserve = 0;  
   
   RtcSetDateTime(&set_time);
 }
+/****************************************************************
+// Summary: 	判断时间是否有效
+// Parameter: 	[in/u8*]pucTime 时间结构体
+//
+// return:		成功与否 
+****************************************************************/
+uint8_t CheckTime(uint8_t *pucTime)
+{
+	if (pucTime[0] > 99)
+		return 0;
+	if ((pucTime[1] < 1) || (pucTime[1] > 12))
+		return 0;
+	if ((pucTime[2] < 1) || (pucTime[2] > 31))
+		return 0;
+	if (pucTime[3] > 23)
+		return 0;
+	if (pucTime[4] > 59)
+		return 0;
+	if (pucTime[5] > 59)
+		return 0;
 
+	return 1;
+}
 void UpdateDateTime()
 {
 	uint8_t Timebuf[7];

@@ -1,4 +1,4 @@
-#ifndef __COMMMOCN_H
+﻿#ifndef __COMMMOCN_H
 #define __COMMMOCN_H
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-/**
+ï»¿/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -86,7 +86,7 @@ osMutexId MBholdingMutexHandle;
 #define PROG                    "FreeModbus"
 #define REG_INPUT_START         1000
 #define REG_INPUT_NREGS         4
-#define REG_HOLDING_START       0
+#define REG_HOLDING_START       1
 #define REG_HOLDING_NREGS       130
 
 /* ----------------------- Static variables ---------------------------------*/
@@ -109,6 +109,10 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
 extern STDATETIME stDateTime;
+
+void 
+rede_adc();
+
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -178,6 +182,7 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
+	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
   /* Infinite loop */
   for(;;)
   {
@@ -227,15 +232,18 @@ void monitor(void const * argument)
 {
   /* USER CODE BEGIN monitor */
 	MX_IWDG_Init();
+//	InitADline();
 	static portTickType xLastWakeTime;  
 	const portTickType xFrequency = pdMS_TO_TICKS(1000);  
    
-	// Ê¹ÓÃµ±Ç°Ê±¼ä³õÊ¼»¯±äÁ¿xLastWakeTime ,×¢ÒâÕâºÍvTaskDelay()º¯Êý²»Í¬ 
+	
 	xLastWakeTime = xTaskGetTickCount();
   /* Infinite loop */
   for(;;)
   {
+	  HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+//	  rede_adc();
 	  HAL_IWDG_Refresh(&hiwdg);
 	  vTaskDelayUntil(&xLastWakeTime, xFrequency); 
   }
@@ -266,7 +274,8 @@ void uMBpoll(void const * argument)
 			/*set 0-10v */
 			
 			dac = usRegHoldingBuf[12];
-			if (dac > 4095) dac = 4095;
+			dac = dac * 3.055;
+			if (dac > 3055) dac = 3055;
 			spi1_dac_write_chb(dac);
 			spi1_dac_write_cha(dac);
 			
@@ -284,7 +293,7 @@ void period(void const * argument)
 {
   /* USER CODE BEGIN period */
   /* Infinite loop */
-	char * time_buf;
+	char  time_buf[64];
 	Init8025();
   for(;;)
   {
@@ -470,6 +479,19 @@ eMBErrorCode
 eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete)
 {
 	return MB_ENOREG;
+}
+int32_t adctemp;
+void 
+rede_adc()
+{
+	
+//	InitADline();
+	
+	adctemp  = ReadAD();
+		  usRegHoldingBuf[11] = adctemp <<16;
+		  usRegHoldingBuf[11] |= adctemp;
+		  printf("%d\n",(int16_t)adctemp);
+	 
 }
 /* USER CODE END Application */
 
