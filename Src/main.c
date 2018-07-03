@@ -51,6 +51,7 @@
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
 #include "crc.h"
+#include "dma.h"
 #include "i2c.h"
 #include "iwdg.h"
 #include "lwip.h"
@@ -118,6 +119,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_CRC_Init();
   MX_I2C3_Init();

@@ -401,5 +401,9 @@
     <ClInclude Include="..\..\freemodbustcp\modbus\rtu\mbrtu.h" />
     <ClInclude Include="..\..\freemodbustcp\modbus\tcp\mbtcp.h" />
     <ClInclude Include="..\..\freemodbustcp\port\port.h" />
+    <ClCompile Include="..\..\Src\dma.c" />
+    <ClInclude Include="..\..\Inc\dma.h" />
+    <ClCompile Include="..\..\bsp\Src\recod.c" />
+    <ClInclude Include="..\..\bsp\Inc\recod.h" />
   </ItemGroup>
 </Project>

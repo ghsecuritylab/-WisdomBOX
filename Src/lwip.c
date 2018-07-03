@@ -63,7 +63,7 @@
 void _Error_Handler(char * file, int line);
 
 /* USER CODE BEGIN 1 */
-
+#include  "common.h"
 /* USER CODE END 1 */
 
 /* Variables Initialization */

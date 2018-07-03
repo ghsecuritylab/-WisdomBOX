@@ -1179,5 +1179,17 @@
     <ClCompile Include="..\..\Src\syscalls.c">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Src\dma.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\Inc\dma.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClCompile Include="..\..\bsp\Src\recod.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\bsp\Inc\recod.h">
+      <Filter>Header files\bsp\Inc</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -104,7 +104,7 @@ void TimerDataHandle(uint8_t* pDate)
     else if(pDate[3] == 0x40)
         stDateTime.week = 6;
     
-    stDateTime.date  = BCD2DEC(pDate[4]);
+    stDateTime.day  = BCD2DEC(pDate[4]);
     stDateTime.month = BCD2DEC(pDate[5]);
     stDateTime.year  = BCD2DEC(pDate[6]);
 }
@@ -117,7 +117,7 @@ void RtcSetDateTime(STDATETIME *pTime)
    Timebuf[1] = DEC2BCD(pTime->minute);
    Timebuf[2] = DEC2BCD(pTime->hour);
    Timebuf[3] = (0x01)<<(pTime->week);  
-   Timebuf[4] = DEC2BCD(pTime->date);
+   Timebuf[4] = DEC2BCD(pTime->day);
    Timebuf[5] = DEC2BCD(pTime->month);
    Timebuf[6] = DEC2BCD(pTime->year);
    
@@ -138,7 +138,7 @@ void RtcSetLocalTime()
   set_time.minute  = 0;//now_ptm->tm_min;       //取值区间为[0,59]
   set_time.hour    = 17;//now_ptm->tm_hour;      //取值区间为[0,23]
   set_time.week    = 1;//now_ptm->tm_wday;      //取值区间为[0,6]，0为星期天
-  set_time.date    = 2;//now_ptm->tm_mday;      //取值区间为[1,31]
+  set_time.day    = 2;//now_ptm->tm_mday;      //取值区间为[1,31]
   set_time.month   = 7;// now_ptm->tm_mon + 1;   //取值区间为[0,11] ，0为1月
   set_time.year    = 18;// now_ptm->tm_year - 100;//tm的年从1900开始计算
   set_time.reserve = 0;  

@@ -60,10 +60,10 @@
 
 /* Private define ------------------------------------------------------------*/
 
-#define LED_GREEN_Pin GPIO_PIN_1
-#define LED_GREEN_GPIO_Port GPIOB
-#define LED_RED_Pin GPIO_PIN_2
+#define LED_RED_Pin GPIO_PIN_1
 #define LED_RED_GPIO_Port GPIOB
+#define LED_GREEN_Pin GPIO_PIN_2
+#define LED_GREEN_GPIO_Port GPIOB
 #define RELAY1_Pin GPIO_PIN_7
 #define RELAY1_GPIO_Port GPIOE
 #define RELAY2_Pin GPIO_PIN_8
@@ -74,6 +74,7 @@
 #define RELAY4_GPIO_Port GPIOE
 #define RX8025INT_Pin GPIO_PIN_14
 #define RX8025INT_GPIO_Port GPIOE
+#define RX8025INT_EXTI_IRQn EXTI15_10_IRQn
 #define SPI2_CS_Pin GPIO_PIN_15
 #define SPI2_CS_GPIO_Port GPIOE
 #define WDI_Pin GPIO_PIN_9

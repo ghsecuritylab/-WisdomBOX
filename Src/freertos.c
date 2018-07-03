@@ -57,6 +57,7 @@
 #include "lwip/api.h"
 #include "lwip/tcpip.h"
 #include "lwip/memp.h"
+#include "lwip/sockets.h"
 
 /* ------------------------ FreeModbus includes --------------------------- */
 #include "mb.h"
@@ -69,6 +70,9 @@
 #include "R8025t.h"
 #include "Relay.h"
 #include "ADS1230.h"
+#include "recod.h"
+#include <memory.h>
+#include "crc.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
@@ -78,6 +82,9 @@ osThreadId monitorTaskHandle;
 osThreadId uMBpoll_taskHandle;
 osThreadId periodTaskHandle;
 osThreadId tcp_severTaskHandle;
+osThreadId socketTaskHandle;
+osThreadId recvTaskHandle;
+osThreadId recv2TaskHandle;
 osMutexId MBholdingMutexHandle;
 
 /* USER CODE BEGIN Variables */
@@ -103,6 +110,9 @@ void monitor(void const * argument);
 void uMBpoll(void const * argument);
 void period(void const * argument);
 void TCPsever(void const * argument);
+void socketsever(void const * argument);
+void socket1(void const * argument);
+void socket2(void const * argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -163,8 +173,20 @@ void MX_FREERTOS_Init(void) {
   periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
 
   /* definition and creation of tcp_severTask */
-  osThreadDef(tcp_severTask, TCPsever, osPriorityAboveNormal, 0, 256);
+  osThreadDef(tcp_severTask, TCPsever, osPriorityAboveNormal, 0, 512);
   tcp_severTaskHandle = osThreadCreate(osThread(tcp_severTask), NULL);
+
+  /* definition and creation of socketTask */
+  osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
+  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
+
+  /* definition and creation of recvTask */
+  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
+  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
+
+  /* definition and creation of recv2Task */
+  osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
+  recv2TaskHandle = osThreadCreate(osThread(recv2Task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -242,7 +264,7 @@ void monitor(void const * argument)
   for(;;)
   {
 	  HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
-	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+//	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 //	  rede_adc();
 	  HAL_IWDG_Refresh(&hiwdg);
 	  vTaskDelayUntil(&xLastWakeTime, xFrequency); 
@@ -302,13 +324,13 @@ void period(void const * argument)
 		  "%04d-%02d-%02d %02d:%02d:%02d",
 		  stDateTime.year + 2000, 
 		  stDateTime.month,
-		  stDateTime.date,
+		  stDateTime.day,
 		  stDateTime.hour,
 		  stDateTime.minute,
 		  stDateTime.second);
 	  
 	  printf("%s\n", time_buf);
-    osDelay(500);
+    osDelay(1000);
   }
   /* USER CODE END period */
 }
@@ -323,7 +345,7 @@ void TCPsever(void const * argument)
 		struct netbuf *buf;
 		char  tcpbuf;
 		uint8_t *data;
-		uint16_t Pulse;
+	
 		u16_t len;
 	      
 		LWIP_UNUSED_ARG(argument);
@@ -357,21 +379,8 @@ void TCPsever(void const * argument)
 							//	taskDISABLE_INTERRUPTS(); 	
 								netbuf_data(buf, (void * *)&data, &len);
 								
-								if (data[0] == 0 && data[1] == 0x06)
-								{
-									if (data[2] == 0 && data[3] == 0x01) 
-									{
-										if (data[5] == 0) 	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
-										else	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
-									}	
-									else if (data[2] == 0 && data[3] == 0x0a) 
-									{
-										Pulse = ((uint16_t)data[4] << 8) | ((uint16_t)(data[5])); 
-										if (Pulse > 1000) Pulse = 1000;
-										
-										//TIM1->CCR1 = Pulse;
-					 				}	
-								}
+//								decoding(data);
+								
 								netconn_write(newconn, data, len, NETCONN_COPY);
 							//	taskENABLE_INTERRUPTS();
 	          
@@ -393,6 +402,105 @@ void TCPsever(void const * argument)
 			}
 		}
   /* USER CODE END TCPsever */
+}
+
+/* socketsever function */
+void socketsever(void const * argument)
+{
+  /* USER CODE BEGIN socketsever */
+	__IO uint32_t uwCRCValue = 0;
+	u_int8_t buflen = 32;
+	u_int8_t ret;
+	unsigned char recv_buffer[buflen];
+	int sock, newconn, size;
+	struct sockaddr_in address, remotehost;
+
+	/* create a TCP socket */
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{
+		printf("can not create socket");
+		return;
+	}
+  
+	/* bind to port 80 at any interface */
+	address.sin_family = AF_INET;
+	address.sin_port = htons(PORT);
+	address.sin_addr.s_addr = INADDR_ANY;
+	if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		printf("can not bind socket");
+		close(sock);
+		return;
+	}
+
+	/* listen for connections (TCP listen backlog = 3) */
+	listen(sock, 5); 
+	size = sizeof(remotehost);
+
+	/* Infinite loop */
+	for (;;)
+	{
+		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
+
+		while ((ret =  recv(newconn, recv_buffer, buflen,0)) > 0)
+		{
+			decoding(recv_buffer);
+			memset(recv_buffer, 0, sizeof(recv_buffer));
+//			printf("ret:%d\n", ret);
+//			osDelay(100);
+		}
+		//	  while (newconn >= 0)
+		//	  {
+		//		  memset(recv_buffer, 0, sizeof(recv_buffer));
+		//		  ret = read(newconn, recv_buffer, buflen); 
+		//		  if (ret <= 0)
+		//		  {
+		//			  close(newconn);
+		//			  printf("read failed\r\n");
+		//			  return;
+		//		  }
+		//		 
+		//			
+		//			  decoding(recv_buffer);
+		////			  memset(recv_buffer, 0, sizeof(recv_buffer));
+		//		  } 
+		
+		//		  uwCRCValue = HAL_CRC_Accumulate(&hcrc, (uint32_t *)recv_buffer,( ret-2));
+		//		  printf("crc:%x\n", uwCRCValue);
+		
+				  close(newconn);
+	
+	//	  else
+	//	  {
+	//		  close(newconn);
+	//	  }
+	    osDelay(1);
+	}
+  /* USER CODE END socketsever */
+}
+
+/* socket1 function */
+void socket1(void const * argument)
+{
+  /* USER CODE BEGIN socket1 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END socket1 */
+}
+
+/* socket2 function */
+void socket2(void const * argument)
+{
+  /* USER CODE BEGIN socket2 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END socket2 */
 }
 
 /* USER CODE BEGIN Application */
