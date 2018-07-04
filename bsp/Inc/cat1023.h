@@ -39,11 +39,11 @@
 #define        CAT1023_ADDR_WRITE   0xA0
 
 /* ########################## Assert Selection ############################## */
-	 uint8_t I2C_EEPROM_WriteBuffer( uint8_t Reg, uint8_t *pBuffer, uint16_t Length);
+	 uint8_t I2C_EEPROM_WriteBuffer( uint16_t Reg, uint8_t *pBuffer, uint16_t Length);
 	 
 	 
 		 
-	uint8_t I2C_EEPROM_ReadBuffer( uint8_t Reg, uint8_t *pBuffer, uint16_t Length);	
+	uint8_t I2C_EEPROM_ReadBuffer( uint16_t Reg, uint8_t *pBuffer, uint16_t Length);	
 	 
 	 
 		 

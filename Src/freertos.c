@@ -100,7 +100,7 @@ osMutexId MBholdingMutexHandle;
 #define REG_HOLDING_NREGS       130
 
 /* ----------------------- Static variables ---------------------------------*/
-uint8_t eeprombuff[32] = { 0x01,0x02,0x03,0x04 };
+
 
 
 
@@ -160,7 +160,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 256);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of mainMB_TASK */
@@ -211,46 +211,21 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
 
 	//  /* USER CODE BEGIN StartDefaultTask */
-		HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	uint8_t eeprombuff[32] = {0};
+	uint8_t a[5] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0f };
 	
-	I2C_EEPROM_ReadBuffer(0, eeprombuff, 8);
-	for (u_int8_t i = 0; i < 8; i++)
+	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	taskDISABLE_INTERRUPTS(); 	
+	
+	I2C_EEPROM_WriteBuffer(0, a, 5);
+	
+	I2C_EEPROM_ReadBuffer(0,  eeprombuff, 5);
+	taskENABLE_INTERRUPTS();
+	for (u_int8_t i = 0; i < 5; i++)
 	{
-		printf("%x\n", eeprombuff[i]);
+		printf("buff%2d:%x  ",i, eeprombuff[i]);
 	}
-	
-	
-//	uint16_t VirtAddVarTab[NB_OF_VAR] = { 0x5555, 0x6666, 0x7777 };
-//	uint16_t VarDataTab[NB_OF_VAR] = { 0, 0, 0 };
-//	uint16_t VarValue, VarDataTmp = 0;
-	
-	
-
-//	/* Unlock the Flash Program Erase controller */
-//	HAL_FLASH_Unlock();
-	
-//	/* EEPROM Init */
-//	if (EE_Init() != EE_OK)
-//	{
-//		Error_Handler();
-//	}
-//	
-//	for (VarValue = 1; VarValue <= 0x1000; VarValue++)
-//	{
-//		/* Sequence 1 */
-//		if ((EE_WriteVariable(VirtAddVarTab[0], VarValue)) != HAL_OK)
-//		{
-//			Error_Handler();
-//		}
-//		if ((EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0])) != HAL_OK)
-//		{
-//			Error_Handler();
-//		}
-//		if (VarValue != VarDataTab[0])
-//		{
-//			Error_Handler();
-//		}
-//	}
+//	printf("\r\n");
   /* Infinite loop */
   for(;;)
   {
@@ -361,19 +336,20 @@ void period(void const * argument)
 {
   /* USER CODE BEGIN period */
   /* Infinite loop */
+	STDATETIME time;
 	char  time_buf[64];
 	Init8025();
   for(;;)
   {
-	  UpdateDateTime();
+	  UpdateDateTime(&time);
 	  sprintf((char *)time_buf,
 		  "%04d-%02d-%02d %02d:%02d:%02d",
-		  stDateTime.year + 2000, 
-		  stDateTime.month,
-		  stDateTime.day,
-		  stDateTime.hour,
-		  stDateTime.minute,
-		  stDateTime.second);
+		  time.year + 2000, 
+		  time.month,
+		  time.day,
+		  time.hour,
+		  time.minute,
+		  time.second);
 	  
 	  printf("%s\n", time_buf);
     osDelay(1000);

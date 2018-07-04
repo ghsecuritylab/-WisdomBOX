@@ -14,41 +14,7 @@
     <MaskInterruptsWhileStepping>false</MaskInterruptsWhileStepping>
     <MemoryWindowPreferences />
     <FavoriteEmbeddedRegisters />
-    <LiveVariables>
-      <LiveVariable>
-        <Expression>temp</Expression>
-        <Type>Invalid</Type>
-        <Enabled>true</Enabled>
-        <Breakpoint>
-          <ComparisonMode>Equals</ComparisonMode>
-          <Enabled>false</Enabled>
-        </Breakpoint>
-        <Plot>false</Plot>
-        <IsCollapsed>false</IsCollapsed>
-      </LiveVariable>
-      <LiveVariable>
-        <Expression>da</Expression>
-        <Type>Invalid</Type>
-        <Enabled>true</Enabled>
-        <Breakpoint>
-          <ComparisonMode>Equals</ComparisonMode>
-          <Enabled>false</Enabled>
-        </Breakpoint>
-        <Plot>false</Plot>
-        <IsCollapsed>false</IsCollapsed>
-      </LiveVariable>
-      <LiveVariable>
-        <Expression>pubRam</Expression>
-        <Type>HexInt8</Type>
-        <Enabled>true</Enabled>
-        <Breakpoint>
-          <ComparisonMode>Equals</ComparisonMode>
-          <Enabled>false</Enabled>
-        </Breakpoint>
-        <Plot>false</Plot>
-        <IsCollapsed>false</IsCollapsed>
-      </LiveVariable>
-    </LiveVariables>
+    <LiveVariables />
     <NestedLiveVariableSettings>
       <LiveVariable>
         <Expression>(temp)[0]</Expression>

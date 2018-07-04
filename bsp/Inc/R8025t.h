@@ -92,7 +92,8 @@ uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage);
 
 void RtcSetDateTime(STDATETIME *pTime);
 void RtcSetLocalTime(void);
-void UpdateDateTime(void);
+void UpdateDateTime(STDATETIME * time);
+
 
 
 

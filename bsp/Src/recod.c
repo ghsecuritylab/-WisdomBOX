@@ -15,13 +15,22 @@ void decoding (uint8_t * data)
 	
 	struct    tm *now_ptm;
 	time_t     timep;
-
-	
+	uint16_t   dacbuff[24] =  { 0 };
+	uint8_t    timeingflage[24] =  { 0 };
+	uint8_t  i = 0;
 	uint16_t dac;
 	
 	if (data[0] == 0 && data[1] == 0x06 && data[2] == 0) //写入
 	{
-		
+		if (data[3]>=0x47&&data[3]<0x95)
+		{
+			i = data[3] - 0x47;
+			printf("i:%d\n", i);
+			dacbuff[i] = ((uint8_t)data[4] << 8) | ((uint8_t)(data[5])); 
+			timeingflage[i] = 1;
+//			I2C_EEPROM_WriteBuffer((10 + i), (uint16_t *) dacbuff, 1);
+//			I2C_EEPROM_WriteBuffer((35 + i), (uint16_t *) timeingflage, 1);
+		}
 	
 		switch (data[3])
 		{
@@ -79,7 +88,6 @@ void decoding (uint8_t * data)
 			timeflage[5] = 1;
 			break;
 		case set_Day:
-			printf("%d\n", data[5]);
 			set_time.day    =    (uint8_t)  data[5];  
 			timeflage[4] = 1;
 			break;
@@ -130,10 +138,11 @@ void decoding (uint8_t * data)
 		case setip4:
 			GATEWAY_ADDRESS[2] = data[5];
 			GATEWAY_ADDRESS[3] = data[4];
-			
-			
 
 			break;
+			
+		
+			
 		default:
 			break;
 		}	
@@ -153,8 +162,8 @@ void decoding (uint8_t * data)
 				
 			}
 			
-			I2C_EEPROM_WriteBuffer(0x00, IP_ADDRESS, 4);
-			I2C_EEPROM_WriteBuffer(0x04, GATEWAY_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(0x00,(uint16_t *) IP_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(0x04, (uint16_t *) GATEWAY_ADDRESS, 4);
 			
 		}
 		else if (data[3]==0x03)
@@ -169,7 +178,7 @@ void decoding (uint8_t * data)
 	{
 		if (data[3]==0x01)
 		{
-			if (data[7] == 0&& data[8] == 0)
+			if (data[7] == 0 && data[8] == 0)
 			{
 				HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
 			}

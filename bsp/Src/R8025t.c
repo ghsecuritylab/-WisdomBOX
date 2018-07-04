@@ -8,8 +8,8 @@
 
 
 
-STDATETIME      stDateTime;
-SPECIALFLAG     specialFlag;
+//STDATETIME      stDateTime;
+//SPECIALFLAG     specialFlag;
 
 
 //DEVSTATE        devState;
@@ -62,14 +62,14 @@ void Init8025(void)
 		//    memset(pubRam,0XFF,1);
 		    Get8025(REGADDR_CONTROL, &pubRam, 1);
     
-		if (pubRam != da[4])
-		{
-			specialFlag.I2C8025F = 1;
-		}
-		else
-		{
-			specialFlag.I2C8025F = 0;
-		}
+//		if (pubRam != da[4])
+//		{
+//			specialFlag.I2C8025F = 1;
+//		}
+//		else
+//		{
+//			specialFlag.I2C8025F = 0;
+//		}
 		RtcSetLocalTime();
 	}
  
@@ -80,33 +80,35 @@ void Init8025(void)
 //
 }  
 
-void TimerDataHandle(uint8_t* pDate)
+void TimerDataHandle(uint8_t* pDate, STDATETIME * stDateTime)
 {
-    stDateTime.second = BCD2DEC(pDate[0]);   
-    stDateTime.minute = BCD2DEC(pDate[1]);
+
+//SPECIALFLAG     specialFlag;
+    stDateTime->second = BCD2DEC(pDate[0]);   
+    stDateTime->minute = BCD2DEC(pDate[1]);
     
     if(pDate[2]==0x24)
         pDate[2] = 0;
-    stDateTime.hour = BCD2DEC(pDate[2]);
+    stDateTime->hour = BCD2DEC(pDate[2]);
     
     if(pDate[3] == 0x01)
-        stDateTime.week = 0;
+        stDateTime->week = 0;
     else if(pDate[3] == 0x02)
-        stDateTime.week = 1;
+		stDateTime->week = 1;
     else if(pDate[3] == 0x04)
-        stDateTime.week = 2;
+		stDateTime->week = 2;
     else if(pDate[3] == 0x08)
-        stDateTime.week = 3;
+		stDateTime->week = 3;
     else if(pDate[3] == 0x10)
-        stDateTime.week = 4;
+		stDateTime->week = 4;
     else if(pDate[3] == 0x20)
-        stDateTime.week = 5;
+		stDateTime->week = 5;
     else if(pDate[3] == 0x40)
-        stDateTime.week = 6;
+		stDateTime->week = 6;
     
-    stDateTime.day  = BCD2DEC(pDate[4]);
-    stDateTime.month = BCD2DEC(pDate[5]);
-    stDateTime.year  = BCD2DEC(pDate[6]);
+    stDateTime->day  = BCD2DEC(pDate[4]);
+    stDateTime->month = BCD2DEC(pDate[5]);
+    stDateTime->year  = BCD2DEC(pDate[6]);
 }
 
 uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage)	
@@ -114,47 +116,46 @@ uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage)
 	uint8_t Timebuf[7];
 	if (flage[0]==1)
 	{
-		if (Timebuf[0] > 59) return 0;
+		
 		Timebuf[0] = DEC2BCD(pTime->second);
+		if (Timebuf[0] > 59) return 0;
 		Set8025(0, &Timebuf[0], 1);     //Timebuf中数据为BCD码
 	}
 	if (flage[1] == 1)
 	{
+
+		Timebuf[1] = DEC2BCD(pTime->minute);
 		if (Timebuf[1] > 59)
 			return 0;
-		Timebuf[1] = DEC2BCD(pTime->minute);
 		Set8025(1, &Timebuf[1], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[2] == 1)
 	{
+		Timebuf[2] = DEC2BCD(pTime->hour);
 		if (Timebuf[2] > 23)
 			return 0;
-
-		Timebuf[2] = DEC2BCD(pTime->hour);
 		Set8025(2, &Timebuf[2], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[3] == 1)
 	{
+		Timebuf[3] = (0x01) << (pTime->week); 
 		if (Timebuf[3] > 6)
 			return 0;
-
-		Timebuf[3] = (0x01) << (pTime->week); 
 		Set8025(3, &Timebuf[3], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[4] == 1)
 	{
-		printf("%d\n", Timebuf[4]);
-		if ((Timebuf[4] < 1) || (Timebuf[4] > 31))
-			return 0;
-
 		Timebuf[4] = DEC2BCD(pTime->day);
+				
+		if ((Timebuf[4] < 1) || (Timebuf[4] > 31))
+		return 0;
 		Set8025(4, &Timebuf[4], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[5] == 1)
 	{
+		Timebuf[5] = DEC2BCD(pTime->month);
 		if (Timebuf[5] > 11)
 			return 0;
-		Timebuf[5] = DEC2BCD(pTime->month);
 		Set8025(5, &Timebuf[5], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[6] == 1)
@@ -181,7 +182,7 @@ void RtcSetDateTime(STDATETIME *pTime)
    Timebuf[6] = DEC2BCD(pTime->year);
    
    Set8025(0,Timebuf,7);   //Timebuf中数据为BCD码
-   TimerDataHandle(Timebuf);
+  // TimerDataHandle(Timebuf);
 }
   
 void RtcSetLocalTime()
@@ -227,11 +228,11 @@ uint8_t CheckTime(uint8_t *pucTime)
 
 	return 1;
 }
-void UpdateDateTime()
+void UpdateDateTime(STDATETIME * time)
 {
 	uint8_t Timebuf[7];
     Get8025(RTC8025_Second, Timebuf, 7);   //Timebuf中数据为BCD码
-    TimerDataHandle(Timebuf);
+    TimerDataHandle(Timebuf,time);
 }
 
 
