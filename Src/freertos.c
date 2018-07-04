@@ -73,9 +73,12 @@
 #include "recod.h"
 #include <memory.h>
 #include "crc.h"
+#include "eeprom.h"
+#include "cat1023.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
+
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
@@ -97,6 +100,10 @@ osMutexId MBholdingMutexHandle;
 #define REG_HOLDING_NREGS       130
 
 /* ----------------------- Static variables ---------------------------------*/
+uint8_t eeprombuff[32] = { 0x01,0x02,0x03,0x04 };
+
+
+
 static USHORT   usRegInputStart = REG_INPUT_START;
 static USHORT   usRegInputBuf[REG_INPUT_NREGS];
 static USHORT   usRegHoldingStart = REG_HOLDING_START;
@@ -203,8 +210,47 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
 
-  /* USER CODE BEGIN StartDefaultTask */
-	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	//  /* USER CODE BEGIN StartDefaultTask */
+		HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	
+	I2C_EEPROM_ReadBuffer(0, eeprombuff, 8);
+	for (u_int8_t i = 0; i < 8; i++)
+	{
+		printf("%x\n", eeprombuff[i]);
+	}
+	
+	
+//	uint16_t VirtAddVarTab[NB_OF_VAR] = { 0x5555, 0x6666, 0x7777 };
+//	uint16_t VarDataTab[NB_OF_VAR] = { 0, 0, 0 };
+//	uint16_t VarValue, VarDataTmp = 0;
+	
+	
+
+//	/* Unlock the Flash Program Erase controller */
+//	HAL_FLASH_Unlock();
+	
+//	/* EEPROM Init */
+//	if (EE_Init() != EE_OK)
+//	{
+//		Error_Handler();
+//	}
+//	
+//	for (VarValue = 1; VarValue <= 0x1000; VarValue++)
+//	{
+//		/* Sequence 1 */
+//		if ((EE_WriteVariable(VirtAddVarTab[0], VarValue)) != HAL_OK)
+//		{
+//			Error_Handler();
+//		}
+//		if ((EE_ReadVariable(VirtAddVarTab[0], &VarDataTab[0])) != HAL_OK)
+//		{
+//			Error_Handler();
+//		}
+//		if (VarValue != VarDataTab[0])
+//		{
+//			Error_Handler();
+//		}
+//	}
   /* Infinite loop */
   for(;;)
   {

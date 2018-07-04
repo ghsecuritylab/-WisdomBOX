@@ -1,16 +1,21 @@
-﻿#include "recod.h"
+﻿
+#include "recod.h"
 #include "DAC.h"
 #include "R8025t.h"
+#include "cat1023.h"
+#include <memory.h>
 
+
+///////////////////////////////////////////////////
 uint8_t	 mode_flage=0;
 STDATETIME set_time; 
-
+uint8_t timeflage[7];
 void decoding (uint8_t * data)
 {
 	
 	struct    tm *now_ptm;
 	time_t     timep;
-  
+
 	
 	uint16_t dac;
 	
@@ -60,69 +65,71 @@ void decoding (uint8_t * data)
 		case set:
 			if (data[5]==0x01)
 			{
-				RtcSetDateTime(&set_time);
+				RtcSetoneTime(&set_time,timeflage);
+				memset(timeflage, 0, 1);
 			}
 			
 			break;
 		case set_Year:
 			set_time.year    = ( uint8_t ) data[5]; 
-			
-			
+			timeflage[6] = 1;
+			break;
 		case set_Month:
 			set_time.month    = (uint8_t) data[5]; 
-			
+			timeflage[5] = 1;
 			break;
 		case set_Day:
+			printf("%d\n", data[5]);
 			set_time.day    =    (uint8_t)  data[5];  
-			
+			timeflage[4] = 1;
 			break;
 		case set_Week:
 			
 			set_time.week    =  (uint8_t)  data[5]; 
-			
+			timeflage[3] = 1;
 
 			break;
 		case set_Hour:
 			
 			set_time.hour    =   (uint8_t)data[5];  
-			
+			timeflage[2] = 1;
 
 			break;
 		case set_Minute :
 			
 			set_time.minute    =   (uint8_t) data[5];  
-			
+			timeflage[1] = 1;
 
 			break;
 		case set_Second:
 			set_time.second    =  (uint8_t) data[5]; 
-			
+			timeflage[0] = 1;
 			
 
 			break;
 		case setip1:
-			IP_ADDRESS[0] = data[6];
-			IP_ADDRESS[1] = data[5];
+			IP_ADDRESS[0] = data[5];
+			IP_ADDRESS[1] = data[4];
 			
 			
 			break;
 		case setip2:
-			IP_ADDRESS[2] = data[6];
-			IP_ADDRESS[3] = data[5];
+			IP_ADDRESS[2] = data[5];
+			IP_ADDRESS[3] = data[4];
 			
 			
 
 			break;
 		case setip3:
-			GATEWAY_ADDRESS[0] = data[6];
-			GATEWAY_ADDRESS[1] = data[5];
+			GATEWAY_ADDRESS[0] = data[5];
+			GATEWAY_ADDRESS[1] = data[4];
 			
 			
 
 			break;
 		case setip4:
-			GATEWAY_ADDRESS[2] = data[6];
-			GATEWAY_ADDRESS[3] = data[5];
+			GATEWAY_ADDRESS[2] = data[5];
+			GATEWAY_ADDRESS[3] = data[4];
 			
 			
 
@@ -135,6 +142,19 @@ void decoding (uint8_t * data)
 	{
 		if (data[3] == 0x02)
 		{
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				printf("ip:%d\n", IP_ADDRESS[i]);
+				
+			}
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				printf("%d\n", GATEWAY_ADDRESS[i]);
+				
+			}
+			
+			I2C_EEPROM_WriteBuffer(0x00, IP_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(0x04, GATEWAY_ADDRESS, 4);
 			
 		}
 		else if (data[3]==0x03)

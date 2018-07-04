@@ -32,7 +32,7 @@ uint8_t DEC2BCD(uint8_t temp)
 
 void Get8025(uint8_t addr, uint8_t *data, uint8_t counter)//I2C_RX8025SA_ADDR
 { 
-	HAL_I2C_Mem_Read(&hi2c3, RX8025_ADDR_WRITE, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
+	HAL_I2C_Mem_Read(&hi2c3, RX8025_ADDR_READ, addr, I2C_MEMADD_SIZE_8BIT, data, counter, 100);
 } 
 
 void Set8025(uint8_t addr, uint8_t *data, uint8_t counter)
@@ -109,6 +109,65 @@ void TimerDataHandle(uint8_t* pDate)
     stDateTime.year  = BCD2DEC(pDate[6]);
 }
 
+uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage)	
+{
+	uint8_t Timebuf[7];
+	if (flage[0]==1)
+	{
+		if (Timebuf[0] > 59) return 0;
+		Timebuf[0] = DEC2BCD(pTime->second);
+		Set8025(0, &Timebuf[0], 1);     //Timebuf中数据为BCD码
+	}
+	if (flage[1] == 1)
+	{
+		if (Timebuf[1] > 59)
+			return 0;
+		Timebuf[1] = DEC2BCD(pTime->minute);
+		Set8025(1, &Timebuf[1], 1);      //Timebuf中数据为BCD码
+	}
+	if (flage[2] == 1)
+	{
+		if (Timebuf[2] > 23)
+			return 0;
+
+		Timebuf[2] = DEC2BCD(pTime->hour);
+		Set8025(2, &Timebuf[2], 1);      //Timebuf中数据为BCD码
+	}
+	if (flage[3] == 1)
+	{
+		if (Timebuf[3] > 6)
+			return 0;
+
+		Timebuf[3] = (0x01) << (pTime->week); 
+		Set8025(3, &Timebuf[3], 1);      //Timebuf中数据为BCD码
+	}
+	if (flage[4] == 1)
+	{
+		printf("%d\n", Timebuf[4]);
+		if ((Timebuf[4] < 1) || (Timebuf[4] > 31))
+			return 0;
+
+		Timebuf[4] = DEC2BCD(pTime->day);
+		Set8025(4, &Timebuf[4], 1);      //Timebuf中数据为BCD码
+	}
+	if (flage[5] == 1)
+	{
+		if (Timebuf[5] > 11)
+			return 0;
+		Timebuf[5] = DEC2BCD(pTime->month);
+		Set8025(5, &Timebuf[5], 1);      //Timebuf中数据为BCD码
+	}
+	if (flage[6] == 1)
+	{
+		Timebuf[6] = DEC2BCD(pTime->year);
+		Set8025(6, &Timebuf[6], 1);      //Timebuf中数据为BCD码
+	}
+
+	return 1;
+//	TimerDataHandle(Timebuf);
+	
+}
+
 void RtcSetDateTime(STDATETIME *pTime)
 {
 	uint8_t Timebuf[7];
@@ -153,7 +212,7 @@ void RtcSetLocalTime()
 ****************************************************************/
 uint8_t CheckTime(uint8_t *pucTime)
 {
-	if (pucTime[0] > 99)
+	if (pucTime[0] > 59)
 		return 0;
 	if ((pucTime[1] < 1) || (pucTime[1] > 12))
 		return 0;

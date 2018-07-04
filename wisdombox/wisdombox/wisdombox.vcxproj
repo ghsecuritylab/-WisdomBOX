@@ -405,5 +405,7 @@
     <ClInclude Include="..\..\Inc\dma.h" />
     <ClCompile Include="..\..\bsp\Src\recod.c" />
     <ClInclude Include="..\..\bsp\Inc\recod.h" />
+    <ClCompile Include="..\..\bsp\Src\cat1023.c" />
+    <ClInclude Include="..\..\bsp\Inc\cat1023.h" />
   </ItemGroup>
 </Project>

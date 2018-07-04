@@ -88,6 +88,8 @@ typedef enum { false = 0, true = !false } bool;
 void Get8025(uint8_t addr, uint8_t *data, uint8_t counter);
 void Set8025(uint8_t addr, uint8_t *data, uint8_t counter);
 void Init8025(void);
+uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage);
+
 void RtcSetDateTime(STDATETIME *pTime);
 void RtcSetLocalTime(void);
 void UpdateDateTime(void);

@@ -94,7 +94,7 @@ int32_t ReadAD(void)
 void OffsetAD()
 {
 	uint8_t time = 10;
-	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)&&time)
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)||time--)
 	{
 		time--;
 		if (time==0)

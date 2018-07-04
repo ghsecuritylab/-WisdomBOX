@@ -1,4 +1,4 @@
-
+﻿
 /**
   ******************************************************************************
   * @file           : main.c
@@ -260,6 +260,8 @@ void _Error_Handler(char *file, int line)
   /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
+	  HAL_Delay(100);
+	  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
   }
   /* USER CODE END Error_Handler_Debug */
 }
