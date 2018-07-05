@@ -9,6 +9,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
+#include "math.h"
 
 
 void delay_us(uint16_t us)
@@ -29,58 +30,75 @@ void delay_us(uint16_t us)
 使用资源：无
 ******************************************************************************/
 
-//int16_t _raw[2];
+uint8_t _raw[5];
 //int32_t ADdatatemp = 0; 
+
+void filter(int32_t * adcsum)
+{
+	int32_t  value_buff;
+	char count;
+	int32_t sum = 0;
+	HAL_SPI_MspDeInit(&hspi2);
+	osDelay(10);
+	InitADgpio();
+	osDelay(10);
+	ReadAD(adcsum);
+	//		for (count = 0; count < 4; count++)
+	//		{
+	//			osDelay(200);
+	//			ReadAD(&value_buff);
+	//			if (value_buff>25000)
+	//			{
+	//				osDelay(200);
+	//				ReadAD(&value_buff);
+	//			}
+	//			sum = sum  +   value_buff;
+	//		
+	//		}
+		*adcsum = *adcsum - 100;
+	if (*adcsum<0)
+	{
+		*adcsum = 0;
+	}
+		*adcsum = *adcsum*(0.53 - (0.000095**adcsum));     // sum * 0.25;
+	HAL_SPI_MspInit(&hspi2);
+}
 void ReadAD(int32_t * ADdatatemp)
 {
-//	int32_t ADdatatemp = 0; 
-////	int16_t _raw[2];
-	HAL_SPI_Receive(&hspi2, (int8_t *)ADdatatemp,2, 100);
-////	printf("0:%d\n", _raw[0]);
-////	printf("1:%d\n", _raw[1]);
-////	ADdatatemp = _raw[0] >> 16;
-////	ADdatatemp |= _raw[1]&0xffff0000;
-//			 *ADdatatemp <<= 4;
-//	*ADdatatemp &= 0x000fffff;
-//	return ADdatatemp;
+
+ 
+//	    HAL_SPI_Transmit(&hspi2, (uint8_t *) 0, 1, 100);
+//		HAL_SPI_Receive(&hspi2, (uint8_t *)_raw, 5, 100);
+	//////	printf("0:%d\n", _raw[0]);
+	//////	printf("1:%d\n", _raw[1]);
+	//////	ADdatatemp = _raw[0] >> 16;
+	//////	ADdatatemp |= _raw[1]&0xffff0000;
+//	 *ADdatatemp = ~*ADdatatemp;
+			// *ADdatatemp >>= 16;
+	//	*ADdatatemp &= 0x000fffff;
+
 	
-/********************************************************************************/	
-////		int32_t ADdatatemp = 0; 
-//		for (uint8_t i = 0; i < 20; i++)            //获取20位数据
-//			{
-//				HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
-//				delay_us(1);
-//				HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-//				ADdatatemp = ADdatatemp << 1;
-//				if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14))                     //AD输出的数据位是1？
-//					{
-//						ADdatatemp++;
-//					}
-//			}    
-//	//	for (uint8_t i = 0; i < 4; i++)             //为下一次转换准备
-//	//		{
-//	//			HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_SET);  
-//	//			 delay_us(1);
-//	//			HAL_GPIO_WritePin(adc_out_GPIO_Port, adc_out_Pin, GPIO_PIN_RESET);                          //ADS_OUT &= ~ADS_CLK_BIT;
-//	//		}
-////		ADdatatemp <<= 4;
-//	ADdatatemp &= 0x000fffff;
-//	return (ADdatatemp);
+	/********************************************************************************/	
 	
-/********************************************************************************/	
-//	int32_t ADdatatemp=0;
-//	for (int8_t a = 0; a < 20; a++) {
-//		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
-//		osDelay(1);
-//		ADdatatemp <<= 1;
-//		ADdatatemp |=  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14);
-////		osDelay(1);
-//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-////		osDelay(1);
-//	}
-//	ADdatatemp <<= 6;
-//	ADdatatemp &= 0x000fffff;
-//	return ADdatatemp;
+	for(uint8_t i = 0 ; i < 20 ; i++)            //获取20位数据
+	{
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
+		delay_us(1);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
+		*ADdatatemp = * ADdatatemp << 1;
+		*ADdatatemp |=  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14);
+	}
+				
+//	for (uint8_t i = 0; i < 4; i++)             //为下一次转换准备
+//		{
+//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);  
+//			delay_us(1);
+//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);                             //ADS_OUT &= ~ADS_CLK_BIT;
+//		}
+	*ADdatatemp &= 0x000fffff;
+
+	
+
 }
 
 
@@ -103,13 +121,13 @@ void OffsetAD()
 		}
 		osDelay(100);
 	}
-//	HAL_SPI_Transmit(&hspi2, 0, 2, 100);
-////	for (int8_t a = 0; a < 26; a++) {
-////		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);  
-////		osDelay(1);
-////		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-////		osDelay(1);
-////	} 
+//	HAL_SPI_Transmit(&hspi2,(uint8_t *) 0xff, 3, 100);
+	for (int8_t a = 0; a < 26; a++) {
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);  
+		delay_us(1);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
+		delay_us(1);
+	} 
 }
 void wakeUp()
 {
@@ -128,29 +146,35 @@ void powerDown()
 返回参数：无
 使用资源：port2
 ******************************************************************************/
+void InitADgpio(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+	
+	GPIO_InitStruct.Pin = GPIO_PIN_10;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PtPin */
+	GPIO_InitStruct.Pin = GPIO_PIN_14;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	
+}
 void InitADline(void)
 {
-//	GPIO_InitTypeDef GPIO_InitStruct;
-//	
-//	GPIO_InitStruct.Pin = GPIO_PIN_10 ;
-//	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-//	GPIO_InitStruct.Pull = GPIO_NOPULL;
-//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-//	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-//
-//	/*Configure GPIO pin : PtPin */
-//	GPIO_InitStruct.Pin = GPIO_PIN_14;
-//	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-//	GPIO_InitStruct.Pull = GPIO_NOPULL;
-//	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	
 
     powerDown();
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-	osDelay(100);
+	osDelay(50);
 	wakeUp();
 	
-	osDelay(100);
+	osDelay(50);
 	OffsetAD();
+	osDelay(100);
 
     //启动转换
 }

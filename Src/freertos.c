@@ -78,7 +78,6 @@
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
-
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
@@ -160,7 +159,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 256);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of mainMB_TASK */
@@ -188,8 +187,8 @@ void MX_FREERTOS_Init(void) {
   socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
   /* definition and creation of recvTask */
-  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
-  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
+//  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
+//  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
 
   /* definition and creation of recv2Task */
   osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
@@ -210,8 +209,8 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
 
-	//  /* USER CODE BEGIN StartDefaultTask */
-	uint8_t eeprombuff[64] = {0};
+  /* USER CODE BEGIN StartDefaultTask */
+//	uint8_t eeprombuff[64] = {0};
 //	uint8_t a[5] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0f };
 	
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
@@ -344,7 +343,7 @@ void period(void const * argument)
 	
 	Init8025();
 	I2C_EEPROM_ReadBuffer(EE_timeaddr, time_buf, 48);
-	
+//	
 	I2C_EEPROM_ReadBuffer(EE_timeflageaddr, flage, 24);
 //	for (u_int8_t i = 0; i < 24; i++)
 //	{
@@ -392,21 +391,28 @@ void period(void const * argument)
   }
   /* USER CODE END period */
 }
-
+#include "spi.h"
 /* TCPsever function */
-
 void TCPsever(void const * argument)
 {
-	int32_t adc;
   /* USER CODE BEGIN TCPsever */
-  /* Infinite loop */
+	int32_t adctemp;
+	InitADgpio();
 	InitADline();
+	osDelay(1000);
+	HAL_SPI_MspInit(&hspi2);
+  /* Infinite loop */
+//
 				for (;;)
 				{
-					rede_adc();
-					osDelay(500);
-//					ReadAD(&adc);
-//					printf("adc2:%d\n", adc);
+					//										rede_adc();
+	
+					
+//									filter(&adctemp);
+//				
+//					adctemp = adctemp ;
+//					printf("adc:%d\n", adctemp);
+		
 					osDelay(500);
 				}
 		
@@ -414,6 +420,7 @@ void TCPsever(void const * argument)
 }
 
 /* socketsever function */
+int newconn;
 void socketsever(void const * argument)
 {
   /* USER CODE BEGIN socketsever */
@@ -421,7 +428,7 @@ void socketsever(void const * argument)
 	u_int8_t buflen = 32;
 	u_int8_t ret;
 	unsigned char recv_buffer[buflen];
-	int sock, newconn, size;
+	int sock, size;
 	struct sockaddr_in address, remotehost;
 
 	/* create a TCP socket */
@@ -450,6 +457,8 @@ void socketsever(void const * argument)
 	for (;;)
 	{
 		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
+	//	printf("mewcon:%d", newconn);
+
 
 		while ((ret =  recv(newconn, recv_buffer, buflen,0)) > 0)
 		{
@@ -458,31 +467,9 @@ void socketsever(void const * argument)
 //			printf("ret:%d\n", ret);
 //			osDelay(100);
 		}
-		//	  while (newconn >= 0)
-		//	  {
-		//		  memset(recv_buffer, 0, sizeof(recv_buffer));
-		//		  ret = read(newconn, recv_buffer, buflen); 
-		//		  if (ret <= 0)
-		//		  {
-		//			  close(newconn);
-		//			  printf("read failed\r\n");
-		//			  return;
-		//		  }
-		//		 
-		//			
-		//			  decoding(recv_buffer);
-		////			  memset(recv_buffer, 0, sizeof(recv_buffer));
-		//		  } 
-		
-		//		  uwCRCValue = HAL_CRC_Accumulate(&hcrc, (uint32_t *)recv_buffer,( ret-2));
-		//		  printf("crc:%x\n", uwCRCValue);
-		
+	
 				  close(newconn);
 	
-	//	  else
-	//	  {
-	//		  close(newconn);
-	//	  }
 	    osDelay(1);
 	}
   /* USER CODE END socketsever */
@@ -492,10 +479,28 @@ void socketsever(void const * argument)
 void socket1(void const * argument)
 {
   /* USER CODE BEGIN socket1 */
+	uint8_t buflen = 32;
+	unsigned char recv_buffer[buflen];
+//	uint8_t  newconn; 
+		
+//	newconn	= (uint8_t ) argument;
+	printf("mew:%d\n", newconn);
+	uint8_t ret;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  while ((ret =  recv(newconn, recv_buffer, buflen, 0)) > 0)
+		  		{
+		  			decoding(recv_buffer);
+		  			memset(recv_buffer, 0, sizeof(recv_buffer));
+		  //			printf("ret:%d\n", ret);
+		  			osDelay(100);
+		  		}
+		  	
+		  				  close(newconn);
+	  osDelay(1);
+//	  vTaskDelete(NULL);
+   
   }
   /* USER CODE END socket1 */
 }
@@ -601,7 +606,7 @@ int32_t adctemp;
 void 
 rede_adc()
 {
-	
+//	int32_t adctemp;
 //	InitADline();
 	
 	 ReadAD(&adctemp);

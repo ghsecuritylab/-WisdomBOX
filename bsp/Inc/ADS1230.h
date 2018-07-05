@@ -39,8 +39,8 @@
 #define ADS_DATA_HI              HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_14)
 //#define ADS_DATA_NOT_READY      (ADS_IN & ADS_DATA_BIT)//AD_CLK输出位1
 
-
-
+void InitADgpio(void);
+void filter(int32_t * adcsum);
 void ReadAD(int32_t * ADdatatemp);   //读AD，从数据线上读取AD输出的数据,可在查询或中断中调用
 void  OffsetAD(void);  //失调校准，一般用来在启动AD后，进行一次AD校准
 void  InitADline(void);//初始化AD控制线，在启动AD前调用

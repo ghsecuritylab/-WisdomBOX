@@ -4,8 +4,8 @@
 #include "R8025t.h"
 #include "cat1023.h"
 #include <memory.h>
-
-
+#include "spi.h"
+#include "ADS1230.h"
 ///////////////////////////////////////////////////
 
 STDATETIME set_time; 
@@ -69,8 +69,9 @@ void decoding (uint8_t * data)
 			}
 			dac = dac * 3.055;
 			if (dac > 3055) dac = 3055;
-//			spi1_dac_write_chb(dac);
-			spi1_dac_write_cha(dac);	
+			HAL_SPI_MspInit(&hspi2);
+		spi1_dac_write_chb(dac);
+//			spi1_dac_write_cha(dac);	
 			
 			break;
 		case set_mode:
@@ -222,6 +223,23 @@ void decoding (uint8_t * data)
 		}
 		
 	}
-	
+	if (data[0] == 0 && data[1] == 0x03 &&data[2]==0)
+	{
+		switch (data[3])
+		{
+		case 0x26:
+			if (data[5]==1)
+			{
+//				filter(&adctemp);
+			}
+			
+			break;
+		default:
+			break;
+		}
+		
+		
+		
+	}
 
 }
