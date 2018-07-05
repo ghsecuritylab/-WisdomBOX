@@ -116,50 +116,58 @@ uint8_t RtcSetoneTime(STDATETIME *pTime, uint8_t *flage)
 	uint8_t Timebuf[7];
 	if (flage[0]==1)
 	{
-		
+		if (pTime->second > 59) return 0;
 		Timebuf[0] = DEC2BCD(pTime->second);
-		if (Timebuf[0] > 59) return 0;
+	
 		Set8025(0, &Timebuf[0], 1);     //Timebuf中数据为BCD码
 	}
 	if (flage[1] == 1)
 	{
 
-		Timebuf[1] = DEC2BCD(pTime->minute);
-		if (Timebuf[1] > 59)
+//		printf("settimehex:%d \n", pTime->minute);
+		if (pTime->minute > 59)
 			return 0;
+		Timebuf[1] = DEC2BCD(pTime->minute);
+//		printf("settimebcd:%d \n", Timebuf[1]);
+		
 		Set8025(1, &Timebuf[1], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[2] == 1)
 	{
-		Timebuf[2] = DEC2BCD(pTime->hour);
-		if (Timebuf[2] > 23)
+		if (pTime->hour > 23)
 			return 0;
+		Timebuf[2] = DEC2BCD(pTime->hour);
+		
 		Set8025(2, &Timebuf[2], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[3] == 1)
 	{
-		Timebuf[3] = (0x01) << (pTime->week); 
-		if (Timebuf[3] > 6)
+		if (pTime->week > 6)
 			return 0;
+		Timebuf[3] = (0x01) << (pTime->week); 
+
 		Set8025(3, &Timebuf[3], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[4] == 1)
 	{
+						
+		if ((pTime->day < 1) || (pTime->day > 31))
+			return 0;
 		Timebuf[4] = DEC2BCD(pTime->day);
-				
-		if ((Timebuf[4] < 1) || (Timebuf[4] > 31))
-		return 0;
+
 		Set8025(4, &Timebuf[4], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[5] == 1)
 	{
-		Timebuf[5] = DEC2BCD(pTime->month);
-		if (Timebuf[5] > 11)
+		if (pTime->month > 11)
 			return 0;
+		Timebuf[5] = DEC2BCD(pTime->month);
+
 		Set8025(5, &Timebuf[5], 1);      //Timebuf中数据为BCD码
 	}
 	if (flage[6] == 1)
 	{
+//		printf("settimehex:%d \n", pTime->year);
 		Timebuf[6] = DEC2BCD(pTime->year);
 		Set8025(6, &Timebuf[6], 1);      //Timebuf中数据为BCD码
 	}

@@ -29,19 +29,19 @@ void delay_us(uint16_t us)
 使用资源：无
 ******************************************************************************/
 
-int16_t _raw[2];
-int32_t ADdatatemp = 0; 
-int32_t ReadAD(void)
+//int16_t _raw[2];
+//int32_t ADdatatemp = 0; 
+void ReadAD(int32_t * ADdatatemp)
 {
 //	int32_t ADdatatemp = 0; 
 ////	int16_t _raw[2];
-//	HAL_SPI_Receive(&hspi2, (uint8_t *)&ADdatatemp,2, 100);
+	HAL_SPI_Receive(&hspi2, (int8_t *)ADdatatemp,2, 100);
 ////	printf("0:%d\n", _raw[0]);
 ////	printf("1:%d\n", _raw[1]);
 ////	ADdatatemp = _raw[0] >> 16;
 ////	ADdatatemp |= _raw[1]&0xffff0000;
-////			ADdatatemp <<= 12;
-////	ADdatatemp &= 0x000fffff;
+//			 *ADdatatemp <<= 4;
+//	*ADdatatemp &= 0x000fffff;
 //	return ADdatatemp;
 	
 /********************************************************************************/	
@@ -94,7 +94,7 @@ int32_t ReadAD(void)
 void OffsetAD()
 {
 	uint8_t time = 10;
-	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)||time--)
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)&&time--)
 	{
 		time--;
 		if (time==0)

@@ -41,7 +41,7 @@
 
 
 
-int32_t  ReadAD(void);         //读AD，从数据线上读取AD输出的数据,可在查询或中断中调用
+void ReadAD(int32_t * ADdatatemp);   //读AD，从数据线上读取AD输出的数据,可在查询或中断中调用
 void  OffsetAD(void);  //失调校准，一般用来在启动AD后，进行一次AD校准
 void  InitADline(void);//初始化AD控制线，在启动AD前调用
 #endif

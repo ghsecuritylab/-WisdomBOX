@@ -5,9 +5,15 @@
  extern "C" {
 #endif
 
-#define	PORT			8088
+#define	PORT			  8088
+
+#define	EE_ipaddr          0
 	 
+#define	EE_timeaddr        20
 	 
+#define	EE_timeflageaddr   80	
+	 
+#define	EE_modeflageaddr   110
 typedef enum 
 {
     DO1=1,
@@ -31,6 +37,6 @@ typedef enum
 extern uint8_t IP_ADDRESS[4];
 extern uint8_t NETMASK_ADDRESS[4];
 extern uint8_t GATEWAY_ADDRESS[4];
-extern uint8_t	 mode_flage ;
+//extern uint8_t	 mode_flage ;
 
 #endif

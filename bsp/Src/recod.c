@@ -7,7 +7,7 @@
 
 
 ///////////////////////////////////////////////////
-uint8_t	 mode_flage=0;
+
 STDATETIME set_time; 
 uint8_t timeflage[7];
 void decoding (uint8_t * data)
@@ -15,21 +15,26 @@ void decoding (uint8_t * data)
 	
 	struct    tm *now_ptm;
 	time_t     timep;
-	uint16_t   dacbuff[24] =  { 0 };
+//	uint16_t   dacbuff[24] =  { 0 };
 	uint8_t    timeingflage[24] =  { 0 };
-	uint8_t  i = 0;
+	uint8_t  addr = 0,flageaddr=0 ;
 	uint16_t dac;
+	uint8_t	 mode_flage = 0;
 	
 	if (data[0] == 0 && data[1] == 0x06 && data[2] == 0) //写入
 	{
-		if (data[3]>=0x47&&data[3]<0x95)
+		if (data[3]>=0x47&&data[3]<=0x5f)
 		{
-			i = data[3] - 0x47;
-			printf("i:%d\n", i);
-			dacbuff[i] = ((uint8_t)data[4] << 8) | ((uint8_t)(data[5])); 
-			timeingflage[i] = 1;
-//			I2C_EEPROM_WriteBuffer((10 + i), (uint16_t *) dacbuff, 1);
-//			I2C_EEPROM_WriteBuffer((35 + i), (uint16_t *) timeingflage, 1);
+			addr =( data[3] - 0x47)*2;
+			flageaddr = (data[3] - 0x47);
+//			printf("data:%d addr:%d  ", (data[3]-0x47),addr);
+//			dacbuff[addr] = ((uint8_t)data[4] << 8) | ((uint8_t)(data[5])); 
+//			printf("dac:%d\n", dacbuff[addr]);
+			timeingflage[flageaddr] = 1;
+			
+			I2C_EEPROM_WriteBuffer((EE_timeaddr + addr), (uint8_t*)& data[4], 1);
+			I2C_EEPROM_WriteBuffer((EE_timeaddr + (addr + 1)), (uint8_t*)& data[5], 1);
+			I2C_EEPROM_WriteBuffer((EE_timeflageaddr + flageaddr), (uint8_t*) &timeingflage[flageaddr], 1);
 		}
 	
 		switch (data[3])
@@ -46,6 +51,10 @@ void decoding (uint8_t * data)
 			
 		case setdac1:
 			dac = ((uint16_t)data[4] << 8) | ((uint16_t)(data[5])); 
+			if (dac>1000)
+			{
+				dac = 1000;
+			}
 			dac = dac * 3.055;
 			if (dac > 3055) dac = 3055;
 			spi1_dac_write_chb(dac);
@@ -54,6 +63,10 @@ void decoding (uint8_t * data)
 			break;
 		case setdac2:
 			dac = ((uint16_t)data[4] << 8) | ((uint16_t)(data[5])); 
+			if (dac > 1000)
+			{
+				dac = 1000;
+			}
 			dac = dac * 3.055;
 			if (dac > 3055) dac = 3055;
 //			spi1_dac_write_chb(dac);
@@ -64,10 +77,12 @@ void decoding (uint8_t * data)
 			if (data[5] == 0)
 			{
 				mode_flage = 0;
+				I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &mode_flage, 1);
 			}
 			else if (data[5] ==0x01)
 			{
 				mode_flage = 1;
+				I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &mode_flage, 1);
 			}
 			
 			break;
@@ -75,12 +90,14 @@ void decoding (uint8_t * data)
 			if (data[5]==0x01)
 			{
 				RtcSetoneTime(&set_time,timeflage);
-				memset(timeflage, 0, 1);
+				memset(timeflage, 0, 7);
 			}
 			
 			break;
 		case set_Year:
+			
 			set_time.year    = ( uint8_t ) data[5]; 
+			
 			timeflage[6] = 1;
 			break;
 		case set_Month:
@@ -89,6 +106,7 @@ void decoding (uint8_t * data)
 			break;
 		case set_Day:
 			set_time.day    =    (uint8_t)  data[5];  
+			printf("data5:%d \n", set_time.day);
 			timeflage[4] = 1;
 			break;
 		case set_Week:
@@ -106,6 +124,7 @@ void decoding (uint8_t * data)
 		case set_Minute :
 			
 			set_time.minute    =   (uint8_t) data[5];  
+		
 			timeflage[1] = 1;
 
 			break;
@@ -162,8 +181,8 @@ void decoding (uint8_t * data)
 				
 			}
 			
-			I2C_EEPROM_WriteBuffer(0x00,(uint16_t *) IP_ADDRESS, 4);
-			I2C_EEPROM_WriteBuffer(0x04, (uint16_t *) GATEWAY_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(EE_ipaddr,  IP_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(EE_ipaddr+4,  GATEWAY_ADDRESS, 4);
 			
 		}
 		else if (data[3]==0x03)

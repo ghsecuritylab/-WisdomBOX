@@ -211,20 +211,20 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
 
 	//  /* USER CODE BEGIN StartDefaultTask */
-	uint8_t eeprombuff[32] = {0};
-	uint8_t a[5] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0f };
+	uint8_t eeprombuff[64] = {0};
+//	uint8_t a[5] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0f };
 	
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	taskDISABLE_INTERRUPTS(); 	
-	
-	I2C_EEPROM_WriteBuffer(0, a, 5);
-	
-	I2C_EEPROM_ReadBuffer(0,  eeprombuff, 5);
-	taskENABLE_INTERRUPTS();
-	for (u_int8_t i = 0; i < 5; i++)
-	{
-		printf("buff%2d:%x  ",i, eeprombuff[i]);
-	}
+//	taskDISABLE_INTERRUPTS(); 	
+//	
+//	I2C_EEPROM_WriteBuffer(EE_timeaddr, a, 5);
+//	
+//	I2C_EEPROM_ReadBuffer(EE_timeaddr, eeprombuff, 48);
+//	taskENABLE_INTERRUPTS();
+//	for (u_int8_t i = 0; i < 48; i++)
+//	{
+//		printf("buff%2d:%x  ",i, eeprombuff[i]);
+//	}
 //	printf("\r\n");
   /* Infinite loop */
   for(;;)
@@ -275,7 +275,7 @@ void monitor(void const * argument)
 {
   /* USER CODE BEGIN monitor */
 	MX_IWDG_Init();
-//	InitADline();
+//	
 	static portTickType xLastWakeTime;  
 	const portTickType xFrequency = pdMS_TO_TICKS(1000);  
    
@@ -337,92 +337,79 @@ void period(void const * argument)
   /* USER CODE BEGIN period */
   /* Infinite loop */
 	STDATETIME time;
-	char  time_buf[64];
+	uint8_t  time_buf[50];
+	uint8_t 	flage[26];
+	uint16_t dac;
+	uint8_t modeflage;
+	
 	Init8025();
+	I2C_EEPROM_ReadBuffer(EE_timeaddr, time_buf, 48);
+	
+	I2C_EEPROM_ReadBuffer(EE_timeflageaddr, flage, 24);
+//	for (u_int8_t i = 0; i < 24; i++)
+//	{
+//		printf("dac%2d:%d  ", i, flage[i]);
+//	}
+	I2C_EEPROM_ReadBuffer(EE_modeflageaddr, &modeflage, 1);
+//	printf("mode:%d\n", modeflage);
+	
   for(;;)
   {
 	  UpdateDateTime(&time);
-	  sprintf((char *)time_buf,
-		  "%04d-%02d-%02d %02d:%02d:%02d",
-		  time.year + 2000, 
-		  time.month,
-		  time.day,
-		  time.hour,
-		  time.minute,
-		  time.second);
+	  if (modeflage == 0)
+	  {
+		  if (time.minute == 0)
+		  {
+			  if (flage[time.hour] == 1)
+			  {
+				  dac = (uint16_t)((time_buf[time.hour * 2] << 8) | time_buf[(time.hour * 2) + 1]); 
+				  
+				  printf("time:%d dac:%d  \n", time.hour, dac);
+				  if (dac > 1000)
+				  {
+					  dac = 1000;
+				  }
+				  dac = dac * 3.055;
+				  if (dac > 3055) dac = 3055;
+				  spi1_dac_write_chb(dac);
+				  spi1_dac_write_cha(dac);
+			  }
+		  }
+	  }
+//	  sprintf((char *)time_buf,
+//		  "%04d-%02d-%02d %02d:%02d:%02d",
+//		  time.year + 2000, 
+//		  time.month,
+//		  time.day,
+//		  time.hour,
+//		  time.minute,
+//		  time.second);
+//	  
+//	  printf("%s\n", time_buf);
+	 
 	  
-	  printf("%s\n", time_buf);
     osDelay(1000);
   }
   /* USER CODE END period */
 }
 
 /* TCPsever function */
+
 void TCPsever(void const * argument)
 {
+	int32_t adc;
   /* USER CODE BEGIN TCPsever */
   /* Infinite loop */
-		struct netconn *conn, *newconn;
-		err_t err, accept_err;
-		struct netbuf *buf;
-		char  tcpbuf;
-		uint8_t *data;
-	
-		u16_t len;
-	      
-		LWIP_UNUSED_ARG(argument);
-	
-		/* Create a new connection identifier. */
-		conn = netconn_new(NETCONN_TCP);
-	  
-		if (conn != NULL)
-		{  
-			/* Bind connection to well known port number 7. */
-			err = netconn_bind(conn, NULL,500);
-	    
-			if (err == ERR_OK)
-			{
-				/* Tell connection to go into listening mode. */
-				netconn_listen(conn);
+	InitADline();
 				for (;;)
 				{
-					/* */
-					accept_err = netconn_accept(conn, &newconn);
-	    
-					/* Process the new connection. */
-					if (accept_err == ERR_OK) 
-					{
-	
-						while (netconn_recv(newconn,&buf) == ERR_OK) 
-						{
-							
-							do 
-							{
-							//	taskDISABLE_INTERRUPTS(); 	
-								netbuf_data(buf, (void * *)&data, &len);
-								
-//								decoding(data);
-								
-								netconn_write(newconn, data, len, NETCONN_COPY);
-							//	taskENABLE_INTERRUPTS();
-	          
-							} while (netbuf_next(buf) >= 0);
-	          
-							netbuf_delete(buf);
-						}
-	        
-						/* Close connection and discard connection identifier. */
-						netconn_close(newconn);
-						netconn_delete(newconn);
-					}
-					osDelay(1);
+					rede_adc();
+					osDelay(500);
+//					ReadAD(&adc);
+//					printf("adc2:%d\n", adc);
+					osDelay(500);
 				}
-			}
-			else
-			{
-				netconn_delete(newconn);
-			}
-		}
+		
   /* USER CODE END TCPsever */
 }
 
@@ -617,10 +604,10 @@ rede_adc()
 	
 //	InitADline();
 	
-	adctemp  = ReadAD();
+	 ReadAD(&adctemp);
 		  usRegHoldingBuf[11] = adctemp <<16;
 		  usRegHoldingBuf[11] |= adctemp;
-		  printf("%d\n",(int16_t)adctemp);
+		  printf("adc:%d\n",adctemp);
 	 
 }
 /* USER CODE END Application */
