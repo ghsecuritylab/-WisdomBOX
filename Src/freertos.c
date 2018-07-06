@@ -75,6 +75,7 @@
 #include "crc.h"
 #include "eeprom.h"
 #include "cat1023.h"
+#include "mbcrc.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
@@ -187,8 +188,8 @@ void MX_FREERTOS_Init(void) {
   socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
   /* definition and creation of recvTask */
-//  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
-//  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
+  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
+  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
 
   /* definition and creation of recv2Task */
   osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
@@ -210,21 +211,18 @@ void StartDefaultTask(void const * argument)
   MX_LWIP_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
-//	uint8_t eeprombuff[64] = {0};
-//	uint8_t a[5] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0f };
+
+
 	
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	InitADline();
 //	taskDISABLE_INTERRUPTS(); 	
 //	
 //	I2C_EEPROM_WriteBuffer(EE_timeaddr, a, 5);
 //	
 //	I2C_EEPROM_ReadBuffer(EE_timeaddr, eeprombuff, 48);
 //	taskENABLE_INTERRUPTS();
-//	for (u_int8_t i = 0; i < 48; i++)
-//	{
-//		printf("buff%2d:%x  ",i, eeprombuff[i]);
-//	}
-//	printf("\r\n");
+
   /* Infinite loop */
   for(;;)
   {
@@ -375,42 +373,39 @@ void period(void const * argument)
 			  }
 		  }
 	  }
-//	  sprintf((char *)time_buf,
-//		  "%04d-%02d-%02d %02d:%02d:%02d",
-//		  time.year + 2000, 
-//		  time.month,
-//		  time.day,
-//		  time.hour,
-//		  time.minute,
-//		  time.second);
-//	  
-//	  printf("%s\n", time_buf);
+	  sprintf((char *)time_buf,
+		  "%04d-%02d-%02d %02d:%02d:%02d",
+		  time.year + 2000, 
+		  time.month,
+		  time.day,
+		  time.hour,
+		  time.minute,
+		  time.second);
+	  
+	  printf("%s\n", time_buf);
 	 
 	  
     osDelay(1000);
   }
   /* USER CODE END period */
 }
-#include "spi.h"
+
 /* TCPsever function */
 void TCPsever(void const * argument)
 {
   /* USER CODE BEGIN TCPsever */
 	int32_t adctemp;
-	InitADgpio();
-	InitADline();
+//	InitADgpio();
+	
 	osDelay(1000);
-	HAL_SPI_MspInit(&hspi2);
+//	HAL_SPI_MspInit(&hspi2);
   /* Infinite loop */
 //
 				for (;;)
 				{
-					//										rede_adc();
-	
-					
-//									filter(&adctemp);
-//				
-//					adctemp = adctemp ;
+														
+//	
+//					filter(&adctemp);
 //					printf("adc:%d\n", adctemp);
 		
 					osDelay(500);
@@ -420,15 +415,15 @@ void TCPsever(void const * argument)
 }
 
 /* socketsever function */
-int newconn;
 void socketsever(void const * argument)
 {
   /* USER CODE BEGIN socketsever */
 	__IO uint32_t uwCRCValue = 0;
 	u_int8_t buflen = 32;
-	u_int8_t ret;
+	u_int8_t ret, error;
+	u_int16_t crc;
 	unsigned char recv_buffer[buflen];
-	int sock, size;
+	int sock, newconn, size;
 	struct sockaddr_in address, remotehost;
 
 	/* create a TCP socket */
@@ -459,17 +454,28 @@ void socketsever(void const * argument)
 		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
 	//	printf("mewcon:%d", newconn);
 
-
-		while ((ret =  recv(newconn, recv_buffer, buflen,0)) > 0)
+		while ((ret =  read(newconn, recv_buffer, buflen)) > 0)
 		{
-			decoding(recv_buffer);
+			crc = (recv_buffer[(ret-1)] << 8 )|( recv_buffer[(ret-2)]);
+
+			if (crc != usMBCRC16(recv_buffer, (ret - 2)))
+			{
+				close(newconn);
+				break;
+			}
+			decoding(recv_buffer, &error);
+			if (error==1)
+			{
+				close(newconn);
+				break;
+			}
+			crc = usMBCRC16(recv_buffer, (ret - 2));
+			recv_buffer[(ret - 1)] = crc >> 8;
+			recv_buffer[(ret - 2)] = crc & 0xff;
+			write(newconn, recv_buffer, ret);
 			memset(recv_buffer, 0, sizeof(recv_buffer));
-//			printf("ret:%d\n", ret);
-//			osDelay(100);
 		}
-	
-				  close(newconn);
-	
+		close(newconn);
 	    osDelay(1);
 	}
   /* USER CODE END socketsever */
@@ -479,25 +485,11 @@ void socketsever(void const * argument)
 void socket1(void const * argument)
 {
   /* USER CODE BEGIN socket1 */
-	uint8_t buflen = 32;
-	unsigned char recv_buffer[buflen];
-//	uint8_t  newconn; 
-		
-//	newconn	= (uint8_t ) argument;
-	printf("mew:%d\n", newconn);
-	uint8_t ret;
+
   /* Infinite loop */
   for(;;)
   {
-	  while ((ret =  recv(newconn, recv_buffer, buflen, 0)) > 0)
-		  		{
-		  			decoding(recv_buffer);
-		  			memset(recv_buffer, 0, sizeof(recv_buffer));
-		  //			printf("ret:%d\n", ret);
-		  			osDelay(100);
-		  		}
-		  	
-		  				  close(newconn);
+
 	  osDelay(1);
 //	  vTaskDelete(NULL);
    
@@ -602,10 +594,11 @@ eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete)
 {
 	return MB_ENOREG;
 }
-int32_t adctemp;
+
 void 
 rede_adc()
 {
+	int32_t adctemp;
 //	int32_t adctemp;
 //	InitADline();
 	

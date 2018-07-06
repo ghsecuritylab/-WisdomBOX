@@ -1,4 +1,5 @@
-﻿/*******************************************************************************
+﻿
+/*******************************************************************************
 // 说明: 头文件声明
 *******************************************************************************/
 #include "ADS1230.h"
@@ -12,15 +13,7 @@
 #include "math.h"
 
 
-void delay_us(uint16_t us)
-{
-//	osDelay(us);
-	uint16_t i;
-	for (i = 0; i < (us*1000); i++)
-	{
-		asm("NOP");
-	} 
-}
+
 
 /*****************************************************************************
 函数名称：ReadAD(void)
@@ -30,75 +23,58 @@ void delay_us(uint16_t us)
 使用资源：无
 ******************************************************************************/
 
-uint8_t _raw[5];
-//int32_t ADdatatemp = 0; 
+int32_t  offset;
 
-void filter(int32_t * adcsum)
+uint8_t filter(int32_t * adcsum)
 {
 	int32_t  value_buff;
-	char count;
-	int32_t sum = 0;
-	HAL_SPI_MspDeInit(&hspi2);
-	osDelay(10);
-	InitADgpio();
-	osDelay(10);
-	ReadAD(adcsum);
-	//		for (count = 0; count < 4; count++)
-	//		{
-	//			osDelay(200);
-	//			ReadAD(&value_buff);
-	//			if (value_buff>25000)
-	//			{
-	//				osDelay(200);
-	//				ReadAD(&value_buff);
-	//			}
-	//			sum = sum  +   value_buff;
-	//		
-	//		}
-		*adcsum = *adcsum - 100;
-	if (*adcsum<0)
+	//	osDelay(500);
+		if(ReadAD(&value_buff)) 
+	{
+		*adcsum = 0xffff;
+		return 1;
+	}
+	
+//	if (value_buff==0)
+//	{
+//		printf("read0\n");
+//	}
+//	printf("adc:%d\n", value_buff);
+
+		*adcsum = value_buff - offset;
+		if (*adcsum<0)
 	{
 		*adcsum = 0;
 	}
-		*adcsum = *adcsum*(0.53 - (0.000095**adcsum));     // sum * 0.25;
-	HAL_SPI_MspInit(&hspi2);
+//	*adcsum =	5 * (*adcsum / ((1L << 20) *64 * (0.0005 / 1000)));
+//	*adcsum =	 (*adcsum / 42)*20;
+	*adcsum = *adcsum*(1.2 - (0.000448**adcsum));
+
+	return 0;	
 }
-void ReadAD(int32_t * ADdatatemp)
+
+uint8_t  ReadAD(int32_t * ADdatatemp)
 {
-
- 
-//	    HAL_SPI_Transmit(&hspi2, (uint8_t *) 0, 1, 100);
-//		HAL_SPI_Receive(&hspi2, (uint8_t *)_raw, 5, 100);
-	//////	printf("0:%d\n", _raw[0]);
-	//////	printf("1:%d\n", _raw[1]);
-	//////	ADdatatemp = _raw[0] >> 16;
-	//////	ADdatatemp |= _raw[1]&0xffff0000;
-//	 *ADdatatemp = ~*ADdatatemp;
-			// *ADdatatemp >>= 16;
-	//	*ADdatatemp &= 0x000fffff;
-
-	
-	/********************************************************************************/	
-	
-	for(uint8_t i = 0 ; i < 20 ; i++)            //获取20位数据
+	uint16_t Timeout = 5000;
+	uint32_t tickstart = 0U;
+	int16_t  _raw[2];
+	tickstart = HAL_GetTick();
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14))
 	{
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET); 
-		delay_us(1);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-		*ADdatatemp = * ADdatatemp << 1;
-		*ADdatatemp |=  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14);
+			/* Timeout management */
+			if ((Timeout == 0U) || ((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick() - tickstart) >=  Timeout)))
+			{
+			   return 1;
+			}
+		osDelay(1);
 	}
-				
-//	for (uint8_t i = 0; i < 4; i++)             //为下一次转换准备
-//		{
-//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);  
-//			delay_us(1);
-//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);                             //ADS_OUT &= ~ADS_CLK_BIT;
-//		}
-	*ADdatatemp &= 0x000fffff;
-
-	
-
+	HAL_SPI_Receive(&hspi2, (uint8_t*)_raw, 2, 100);
+				     *ADdatatemp = 0;
+					 *ADdatatemp |= _raw[0]&0xffff;
+					*ADdatatemp <<= 16;
+					*ADdatatemp |= (_raw[1]) & 0xffff;
+					*ADdatatemp /= 1L << 12;
+	return 0;	
 }
 
 
@@ -111,23 +87,28 @@ void ReadAD(int32_t * ADdatatemp)
 ******************************************************************************/
 void OffsetAD()
 {
-	uint8_t time = 10;
-	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)&&time--)
+	uint16_t Timeout= 5000;
+	uint32_t tickstart = 0U;
+	tickstart = HAL_GetTick();
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14))
 	{
-		time--;
-		if (time==0)
+		/* Timeout management */
+		if ((Timeout == 0U) || ((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick() - tickstart) >=  Timeout)))
 		{
-			printf("adc初始化错\n");
+			printf("timout\n");
+			break;
 		}
-		osDelay(100);
+		osDelay(1);
 	}
-//	HAL_SPI_Transmit(&hspi2,(uint8_t *) 0xff, 3, 100);
-	for (int8_t a = 0; a < 26; a++) {
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);  
-		delay_us(1);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-		delay_us(1);
-	} 
+	HAL_SPI_Transmit(&hspi2,(uint8_t *) 0, 2, 100);
+	osDelay(50);
+	ReadAD(&offset);
+	ReadAD(&offset);
+	if (offset>100)
+	{
+		offset = 0;
+	}
+	printf("offset:%d\n", offset);
 }
 void wakeUp()
 {
@@ -165,8 +146,6 @@ void InitADgpio(void)
 }
 void InitADline(void)
 {
-	
-
     powerDown();
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
 	osDelay(50);
@@ -175,6 +154,5 @@ void InitADline(void)
 	osDelay(50);
 	OffsetAD();
 	osDelay(100);
-
     //启动转换
 }

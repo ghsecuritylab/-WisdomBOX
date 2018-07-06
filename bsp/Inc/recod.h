@@ -74,7 +74,8 @@
  extern "C" {
 #endif	 
 	 
-void decoding(uint8_t * data);
+void decoding(uint8_t * data, uint8_t * error);
+	 
 
 	 
 	 
