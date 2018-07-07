@@ -13,6 +13,9 @@
 
 STDATETIME set_time; 
 uint8_t timeflage[7];
+uint8_t gpiostatus1= 0;
+u_int16_t  dacstatusa= 0;
+u_int16_t  dacstatusb= 0;
 void decoding(uint8_t * data, uint8_t * error)
 {
 	STDATETIME time;
@@ -46,8 +49,16 @@ void decoding(uint8_t * data, uint8_t * error)
 			{
 			
 			case setrelay1:
-				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
-				else	HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
+				if (data[4] == 0&&data[5] == 0) 
+				{
+					HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
+					gpiostatus1 = 0;
+				}
+				else	
+				{
+					HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
+					gpiostatus1 = 1;
+				}
 				break;
 			case setrelay2:
 				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_RESET);
@@ -60,6 +71,7 @@ void decoding(uint8_t * data, uint8_t * error)
 				{
 					dac = 1000;
 				}
+				dacstatusa = dac;
 				dac = dac * 3.055;
 				if (dac > 3055) dac = 3055;
 				spi1_dac_write_chb(dac);
@@ -72,6 +84,9 @@ void decoding(uint8_t * data, uint8_t * error)
 				{
 					dac = 1000;
 				}
+				printf("adc:%d", dac);
+				dacstatusb = dac;
+				printf("adcs:%d", dacstatusb);
 				dac = dac * 3.055;
 				if (dac > 3055) dac = 3055;
 				spi1_dac_write_chb(dac);
@@ -209,10 +224,12 @@ void decoding(uint8_t * data, uint8_t * error)
 			if (data[7] == 0 && data[8] == 0)
 			{
 				HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_RESET);
+				gpiostatus1 = 0;
 			}
 			else
 			{
 				HAL_GPIO_WritePin(RELAY1_GPIO_Port, RELAY1_Pin, GPIO_PIN_SET);
+				gpiostatus1 = 1;
 			}
 			
 			
@@ -240,6 +257,29 @@ void decoding(uint8_t * data, uint8_t * error)
 	{
 		switch (data[3])
 		{
+			
+		case 0x01:
+			if (data[5] == 1) data[5] = gpiostatus1;
+			
+			break;
+		case 0x0a:
+			if (data[5] == 1)//读条光
+			{
+				data[4] = dacstatusa >> 8;
+				data[5] = dacstatusa & 0xff;	
+			}
+
+			
+			break;
+		case 0x0b:
+			if (data[5] == 1)
+			{
+//				printf("adcb:%d", dacstatusb);
+				data[4] = dacstatusb >> 8;
+				data[5] = dacstatusb & 0xff;
+			}
+			
+			break;
 		case 0x26:
 			if (data[5] == 1)//读取电流
 			{
@@ -249,9 +289,8 @@ void decoding(uint8_t * data, uint8_t * error)
 				//				taskENABLE_INTERRUPTS(); 
 								adc = (uint16_t)adcvule;
 
-				data[4] = adc << 8;
+				data[4] = adc >> 8;
 				data[5] = adc & 0xff;
-
 			}
 			
 			break;

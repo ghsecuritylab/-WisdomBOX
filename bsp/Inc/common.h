@@ -4,7 +4,17 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
+typedef void *xSocket_t;
+typedef struct Network Network;
 
+struct Network
+{
+	xSocket_t my_socket;
+	int (*mqttread) (Network*, unsigned char*, int, int);
+	int (*mqttwrite) (Network*, unsigned char*, int, int);
+	void (*disconnect) (Network*);
+};
+	 
 #define	PORT			  8088
 
 #define	EE_ipaddr          0

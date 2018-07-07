@@ -95,7 +95,7 @@ void OffsetAD()
 		/* Timeout management */
 		if ((Timeout == 0U) || ((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick() - tickstart) >=  Timeout)))
 		{
-			printf("timout\n");
+			printf("adctimout\n");
 			break;
 		}
 		osDelay(1);
@@ -147,8 +147,8 @@ void InitADgpio(void)
 void InitADline(void)
 {
     powerDown();
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
-	osDelay(50);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);  
+	osDelay(100);
 	wakeUp();
 	
 	osDelay(50);

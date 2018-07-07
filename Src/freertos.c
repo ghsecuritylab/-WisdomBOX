@@ -58,7 +58,9 @@
 #include "lwip/tcpip.h"
 #include "lwip/memp.h"
 #include "lwip/sockets.h"
-
+#include "lwip/netdb.h"
+#include "lwip.h"
+#include "netif/ethernet.h"
 /* ------------------------ FreeModbus includes --------------------------- */
 #include "mb.h"
 #include "iwdg.h"
@@ -78,13 +80,13 @@
 #include "mbcrc.h"
 /* USER CODE END Includes */
 
-/* Variables -----------------------------------------------------------------*/
+
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
 osThreadId uMBpoll_taskHandle;
 osThreadId periodTaskHandle;
-osThreadId tcp_severTaskHandle;
+osThreadId socket_clienTasHandle;
 osThreadId socketTaskHandle;
 osThreadId recvTaskHandle;
 osThreadId recv2TaskHandle;
@@ -116,7 +118,7 @@ void vMBServerTask(void const * argument);
 void monitor(void const * argument);
 void uMBpoll(void const * argument);
 void period(void const * argument);
-void TCPsever(void const * argument);
+void socket_clien(void const * argument);
 void socketsever(void const * argument);
 void socket1(void const * argument);
 void socket2(void const * argument);
@@ -126,6 +128,11 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
 extern STDATETIME stDateTime;
+
+int NetworkConnect(Network* n, char* addr, char* port);
+int FreeRTOS_read(Network*, unsigned char*, int, int);
+int FreeRTOS_write(Network*, unsigned char*, int, int);
+void FreeRTOS_disconnect(Network*);
 
 void 
 rede_adc();
@@ -164,36 +171,36 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of mainMB_TASK */
-  osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
-  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
+//  osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
+//  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
 
   /* definition and creation of monitorTask */
-  osThreadDef(monitorTask, monitor, osPriorityNormal, 0, 128);
+	osThreadDef(monitorTask, monitor, osPriorityBelowNormal, 0, 128);
   monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
 
   /* definition and creation of uMBpoll_task */
-  osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
-  uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
+//  osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
+//  uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
 
   /* definition and creation of periodTask */
   osThreadDef(periodTask, period, osPriorityBelowNormal, 0, 256);
   periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
 
-  /* definition and creation of tcp_severTask */
-  osThreadDef(tcp_severTask, TCPsever, osPriorityAboveNormal, 0, 512);
-  tcp_severTaskHandle = osThreadCreate(osThread(tcp_severTask), NULL);
+  /* definition and creation of socket_clienTas */
+//  osThreadDef(socket_clienTas, socket_clien, osPriorityAboveNormal, 0, 512);
+//  socket_clienTasHandle = osThreadCreate(osThread(socket_clienTas), NULL);
 
   /* definition and creation of socketTask */
   osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
   socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
   /* definition and creation of recvTask */
-  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
-  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
+//  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
+//  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
 
   /* definition and creation of recv2Task */
-  osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
-  recv2TaskHandle = osThreadCreate(osThread(recv2Task), NULL);
+//  osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
+//  recv2TaskHandle = osThreadCreate(osThread(recv2Task), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -390,28 +397,50 @@ void period(void const * argument)
   /* USER CODE END period */
 }
 
-/* TCPsever function */
-void TCPsever(void const * argument)
+/* socket_clien function */
+void socket_clien(void const * argument)
 {
-  /* USER CODE BEGIN TCPsever */
-	int32_t adctemp;
-//	InitADgpio();
+  /* USER CODE BEGIN socket_clien */
+	u_int8_t buflen = 32;
+	u_int8_t ret, error;
+	u_int16_t crc;
+	unsigned char recv_buffer[buflen];
 	
-	osDelay(1000);
-//	HAL_SPI_MspInit(&hspi2);
+	uint8_t rc = 0;
+	Network network;
+		
+	char* address = "192.168.1.92";
+	char* port = "1992";
+	if ((rc = NetworkConnect(&network, address, port)) != 0)
+		printf("Return code from network connect is %d\n", rc);
   /* Infinite loop */
-//
-				for (;;)
-				{
-														
-//	
-//					filter(&adctemp);
-//					printf("adc:%d\n", adctemp);
-		
-					osDelay(500);
-				}
-		
-  /* USER CODE END TCPsever */
+  for(;;)
+  {
+	  if ((ret = FreeRTOS_read(&network, recv_buffer, buflen, 100)) > 0)
+	  {
+		  crc = (recv_buffer[(ret - 1)] << 8) | (recv_buffer[(ret - 2)]);
+
+		  if (crc != usMBCRC16(recv_buffer, (ret - 2)))
+		  {
+			  FreeRTOS_disconnect(&network);
+			  break;
+		  }
+		  decoding(recv_buffer, &error);
+		  if (error == 1)
+		  {
+			  FreeRTOS_disconnect(&network);
+			  break;
+		  }
+		  crc = usMBCRC16(recv_buffer, (ret - 2));
+		  recv_buffer[(ret - 1)] = crc >> 8;
+		  recv_buffer[(ret - 2)] = crc & 0xff;
+		  FreeRTOS_write(&network,recv_buffer, ret,100);
+		  memset(recv_buffer, 0, sizeof(recv_buffer));
+	  }
+	  
+    osDelay(1);
+  }
+  /* USER CODE END socket_clien */
 }
 
 /* socketsever function */
@@ -445,7 +474,7 @@ void socketsever(void const * argument)
 	}
 
 	/* listen for connections (TCP listen backlog = 3) */
-	listen(sock, 5); 
+	listen(sock, 1); 
 	size = sizeof(remotehost);
 
 	/* Infinite loop */
@@ -502,10 +531,70 @@ void socket2(void const * argument)
 {
   /* USER CODE BEGIN socket2 */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+ 	
+	u_int8_t buflen = 128;
+	u_int8_t ret;
+	uint8_t start, end, lent;
+	
+	unsigned char recv_buffer[buflen];
+	int sock, newconn, size;
+	
+	struct sockaddr_in address, remotehost;
+	/* create a TCP socket */
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{
+		printf("can not create socket");
+		return;
+	}
+	/* bind to port 80 at any interface */
+	address.sin_family = AF_INET;
+	address.sin_port = htons(9254);
+	address.sin_addr.s_addr = INADDR_ANY;
+	if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		printf("can not bind socket");
+		close(sock);
+		return;
+	}
+
+	/* listen for connections (TCP listen backlog = 3) */
+	listen(sock, 1); 
+	size = sizeof(remotehost);
+
+	/* Infinite loop */
+	for (;;)
+	{
+		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
+		ret =  read(newconn, recv_buffer, buflen);
+		if (ret>0)
+		{
+			for (uint8_t i = 0; i < buflen; i++)
+			{
+				if (recv_buffer[i]=='"')
+				{
+					start = i;
+					printf("start:%d", start);
+					break;
+				}
+				
+			}		
+			for (uint8_t i = start; i < buflen; i++)
+			{
+				if (recv_buffer[i] == '"')
+				{
+					end = i;
+					printf("end:%d", end);
+					break;
+				}				
+			}	
+		}	
+		
+		write(newconn, recv_buffer, ret);
+		memset(recv_buffer, 0, sizeof(recv_buffer));
+		close(newconn);
+		osDelay(1);
+	}	
+		
   /* USER CODE END socket2 */
 }
 
@@ -607,6 +696,113 @@ rede_adc()
 		  usRegHoldingBuf[11] |= adctemp;
 		  printf("adc:%d\n",adctemp);
 	 
+}
+
+int NetworkConnect(Network* n, char* addr, char* port)
+{	
+	int type = SOCK_STREAM;
+	struct sockaddr_in address;
+	int rc = -1;
+	sa_family_t family = AF_INET;
+	struct addrinfo *result = NULL;
+	struct addrinfo hints = { 0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL };
+	static struct timeval tv;
+
+	n->my_socket = -1;
+	if (addr[0] == '[')
+		++addr;
+
+	if ((rc = getaddrinfo(addr, port, &hints, &result)) == 0)
+	{
+		struct addrinfo* res = result;
+		/* prefer ip4 addresses */
+		while (res)
+		{
+			if (res->ai_family == AF_INET)
+			{
+				result = res;
+				break;
+			}
+			res = res->ai_next;
+		}
+		if (result->ai_family == AF_INET)
+		{
+			address.sin_port = ((struct sockaddr_in*)(result->ai_addr))->sin_port;     // htons(port);
+			address.sin_family = family = AF_INET;
+			address.sin_addr = ((struct sockaddr_in*)(result->ai_addr))->sin_addr;
+		}
+		else
+			rc = -1;
+		freeaddrinfo(result);
+	}
+	if (rc == 0)
+	{
+		n->my_socket =	socket(family, type, 0);
+		if (n->my_socket != -1)
+		{
+			if (family == AF_INET)
+				rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
+		}
+	}
+
+	return rc;
+}
+
+int FreeRTOS_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
+{
+	TickType_t xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
+	TimeOut_t xTimeOut;
+	int recvLen = 0;
+
+	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
+	do
+	{
+		int rc = 0;
+
+		setsockopt(n->my_socket, 0, SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		rc = recv(n->my_socket, buffer + recvLen, len - recvLen, 0);
+		if (rc > 0)
+			recvLen += rc;
+		else if (rc < 0)
+		{
+			recvLen = rc;
+			break;
+		}
+	} while (recvLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+
+	return recvLen;
+}
+
+
+int FreeRTOS_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
+{
+	TickType_t xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
+	TimeOut_t xTimeOut;
+	int sentLen = 0;
+
+	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
+	do
+	{
+		int rc = 0;
+
+		setsockopt(n->my_socket, 0, SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		rc = send(n->my_socket, buffer + sentLen, len - sentLen, 0);
+		if (rc > 0)
+			sentLen += rc;
+		else if (rc < 0)
+		{
+			sentLen = rc;
+			break;
+		}
+	} while (sentLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+
+	return sentLen;
+}
+
+
+void FreeRTOS_disconnect(Network* n)
+{
+	closesocket(n->my_socket);
 }
 /* USER CODE END Application */
 
