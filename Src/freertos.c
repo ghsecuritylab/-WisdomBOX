@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -80,7 +80,7 @@
 #include "mbcrc.h"
 /* USER CODE END Includes */
 
-
+/* Variables -----------------------------------------------------------------*/
 osThreadId defaultTaskHandle;
 osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
@@ -89,7 +89,6 @@ osThreadId periodTaskHandle;
 osThreadId socket_clienTasHandle;
 osThreadId socketTaskHandle;
 osThreadId recvTaskHandle;
-osThreadId recv2TaskHandle;
 osMutexId MBholdingMutexHandle;
 
 /* USER CODE BEGIN Variables */
@@ -121,7 +120,6 @@ void period(void const * argument);
 void socket_clien(void const * argument);
 void socketsever(void const * argument);
 void socket1(void const * argument);
-void socket2(void const * argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -145,7 +143,7 @@ rede_adc();
 
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-       
+
   /* USER CODE END Init */
 
   /* Create the mutex(es) */
@@ -175,7 +173,7 @@ void MX_FREERTOS_Init(void) {
 //  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
 
   /* definition and creation of monitorTask */
-	osThreadDef(monitorTask, monitor, osPriorityBelowNormal, 0, 128);
+  osThreadDef(monitorTask, monitor, osPriorityNormal, 0, 128);
   monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
 
   /* definition and creation of uMBpoll_task */
@@ -198,10 +196,6 @@ void MX_FREERTOS_Init(void) {
 //  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
 //  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
 
-  /* definition and creation of recv2Task */
-//  osThreadDef(recv2Task, socket2, osPriorityNormal, 0, 128);
-//  recv2TaskHandle = osThreadCreate(osThread(recv2Task), NULL);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -215,6 +209,46 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* init code for LWIP */
+	u_int8_t setipflage = 0;
+	
+	Init8025();
+	I2C_EEPROM_ReadBuffer(EE_setipflageaddr, &setipflage, 1);
+	printf("flage:%d  ", setipflage);
+	if (setipflage == 1)
+	{
+		I2C_EEPROM_ReadBuffer(EE_ipaddr, IP_ADDRESS, 4);
+		for (u_int8_t i = 0; i < 4; i++)
+		{
+			printf("ip%2d:%d  ", i, IP_ADDRESS[i]);
+		}
+		I2C_EEPROM_ReadBuffer(EE_ipaddr + 4, GATEWAY_ADDRESS, 4);
+		for (u_int8_t i = 0; i < 4; i++)
+		{
+			printf("way%2d:%d  ", i, GATEWAY_ADDRESS[i]);
+		}
+		
+		NETMASK_ADDRESS[0] = 255;
+		NETMASK_ADDRESS[1] = 255;
+		NETMASK_ADDRESS[2] = 255;
+		NETMASK_ADDRESS[3] = 0;
+	}
+	else
+	{
+		IP_ADDRESS[0] = 192;
+		IP_ADDRESS[1] = 168;
+		IP_ADDRESS[2] = 1;
+		IP_ADDRESS[3] = 90;
+		NETMASK_ADDRESS[0] = 255;
+		NETMASK_ADDRESS[1] = 255;
+		NETMASK_ADDRESS[2] = 255;
+		NETMASK_ADDRESS[3] = 0;
+		GATEWAY_ADDRESS[0] = 192;
+		GATEWAY_ADDRESS[1] = 168;
+		GATEWAY_ADDRESS[2] = 1;
+		GATEWAY_ADDRESS[3] = 1;
+		
+	}
+	
   MX_LWIP_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
@@ -222,6 +256,8 @@ void StartDefaultTask(void const * argument)
 
 	
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	spi1_dac_write_chb(0);
+	spi1_dac_write_cha(0);
 	InitADline();
 //	taskDISABLE_INTERRUPTS(); 	
 //	
@@ -291,6 +327,7 @@ void monitor(void const * argument)
 	  HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 //	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 //	  rede_adc();
+	  
 	  HAL_IWDG_Refresh(&hiwdg);
 	  vTaskDelayUntil(&xLastWakeTime, xFrequency); 
   }
@@ -346,7 +383,7 @@ void period(void const * argument)
 	uint16_t dac;
 	uint8_t modeflage;
 	
-	Init8025();
+	
 	I2C_EEPROM_ReadBuffer(EE_timeaddr, time_buf, 48);
 //	
 	I2C_EEPROM_ReadBuffer(EE_timeflageaddr, flage, 24);
@@ -390,7 +427,7 @@ void period(void const * argument)
 		  time.second);
 	  
 	  printf("%s\n", time_buf);
-	 
+	  rede_adc();
 	  
     osDelay(1000);
   }
@@ -526,78 +563,6 @@ void socket1(void const * argument)
   /* USER CODE END socket1 */
 }
 
-/* socket2 function */
-void socket2(void const * argument)
-{
-  /* USER CODE BEGIN socket2 */
-  /* Infinite loop */
- 	
-	u_int8_t buflen = 128;
-	u_int8_t ret;
-	uint8_t start, end, lent;
-	
-	unsigned char recv_buffer[buflen];
-	int sock, newconn, size;
-	
-	struct sockaddr_in address, remotehost;
-	/* create a TCP socket */
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-	{
-		printf("can not create socket");
-		return;
-	}
-	/* bind to port 80 at any interface */
-	address.sin_family = AF_INET;
-	address.sin_port = htons(9254);
-	address.sin_addr.s_addr = INADDR_ANY;
-	if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
-	{
-		printf("can not bind socket");
-		close(sock);
-		return;
-	}
-
-	/* listen for connections (TCP listen backlog = 3) */
-	listen(sock, 1); 
-	size = sizeof(remotehost);
-
-	/* Infinite loop */
-	for (;;)
-	{
-		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
-		ret =  read(newconn, recv_buffer, buflen);
-		if (ret>0)
-		{
-			for (uint8_t i = 0; i < buflen; i++)
-			{
-				if (recv_buffer[i]=='"')
-				{
-					start = i;
-					printf("start:%d", start);
-					break;
-				}
-				
-			}		
-			for (uint8_t i = start; i < buflen; i++)
-			{
-				if (recv_buffer[i] == '"')
-				{
-					end = i;
-					printf("end:%d", end);
-					break;
-				}				
-			}	
-		}	
-		
-		write(newconn, recv_buffer, ret);
-		memset(recv_buffer, 0, sizeof(recv_buffer));
-		close(newconn);
-		osDelay(1);
-	}	
-		
-  /* USER CODE END socket2 */
-}
-
 /* USER CODE BEGIN Application */
 eMBErrorCode
 eMBRegInputCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs)
@@ -691,10 +656,10 @@ rede_adc()
 //	int32_t adctemp;
 //	InitADline();
 	
-	 ReadAD(&adctemp);
+	 filter(&adctemp);
 		  usRegHoldingBuf[11] = adctemp <<16;
 		  usRegHoldingBuf[11] |= adctemp;
-		  printf("adc:%d\n",adctemp);
+		  printf("adcvule:%d\n",adctemp);
 	 
 }
 

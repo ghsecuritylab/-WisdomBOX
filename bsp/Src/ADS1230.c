@@ -87,6 +87,7 @@ uint8_t  ReadAD(int32_t * ADdatatemp)
 ******************************************************************************/
 void OffsetAD()
 {
+//	HAL_SPI_Transmit(&hspi2, (uint8_t *) 0, 1, 100);
 	uint16_t Timeout= 5000;
 	uint32_t tickstart = 0U;
 	tickstart = HAL_GetTick();
@@ -104,7 +105,7 @@ void OffsetAD()
 	osDelay(50);
 	ReadAD(&offset);
 	ReadAD(&offset);
-	if (offset>100)
+	if (offset>1000)
 	{
 		offset = 0;
 	}

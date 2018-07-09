@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * File Name          : gpio.c
   * Description        : This file provides code for the configuration

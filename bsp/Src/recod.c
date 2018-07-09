@@ -16,6 +16,7 @@ uint8_t timeflage[7];
 uint8_t gpiostatus1= 0;
 u_int16_t  dacstatusa= 0;
 u_int16_t  dacstatusb= 0;
+//uint8_t setip_flage = 0;
 void decoding(uint8_t * data, uint8_t * error)
 {
 	STDATETIME time;
@@ -28,7 +29,7 @@ void decoding(uint8_t * data, uint8_t * error)
 	uint16_t dac;
 	uint8_t	 mode_flage = 0;
 	*error = 0;
-	
+	uint8_t setip_flage = 0;
 	if (data[0] == 0 && data[1] == 0x06 && data[2] == 0) //写入
 		{
 			if (data[3] >= 0x47&&data[3] <= 0x5f)
@@ -200,9 +201,10 @@ void decoding(uint8_t * data, uint8_t * error)
 				printf("%d\n", GATEWAY_ADDRESS[i]);
 				
 			}
-			
+			setip_flage = 1;
 			I2C_EEPROM_WriteBuffer(EE_ipaddr, IP_ADDRESS, 4);
 			I2C_EEPROM_WriteBuffer(EE_ipaddr + 4, GATEWAY_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &setip_flage, 1);
 			
 		}
 		else if (data[3] == 0x03)
