@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -65,6 +65,7 @@
 #include "mb.h"
 #include "iwdg.h"
 /* ------------------------ Project includes ------------------------------ */
+#include "stm32f4xx_nucleo_144.h"
 #include "usart.h"
 #include "gpio.h"
 #include "iwdg.h"
@@ -102,7 +103,7 @@ osMutexId MBholdingMutexHandle;
 
 /* ----------------------- Static variables ---------------------------------*/
 
-
+//struct netif gnetif; /* network interface structure */
 
 
 static USHORT   usRegInputStart = REG_INPUT_START;
@@ -126,7 +127,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
 extern STDATETIME stDateTime;
-
+uint8_t User_notification(struct netif *netif);
 int NetworkConnect(Network* n, char* addr, char* port);
 int FreeRTOS_read(Network*, unsigned char*, int, int);
 int FreeRTOS_write(Network*, unsigned char*, int, int);
@@ -165,7 +166,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of mainMB_TASK */
@@ -185,16 +186,16 @@ void MX_FREERTOS_Init(void) {
   periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
 
   /* definition and creation of socket_clienTas */
-//  osThreadDef(socket_clienTas, socket_clien, osPriorityAboveNormal, 0, 512);
-//  socket_clienTasHandle = osThreadCreate(osThread(socket_clienTas), NULL);
+  osThreadDef(socket_clienTas, socket_clien, osPriorityAboveNormal, 0, 512);
+  socket_clienTasHandle = osThreadCreate(osThread(socket_clienTas), NULL);
 
   /* definition and creation of socketTask */
   osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
   socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
   /* definition and creation of recvTask */
-//  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
-//  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
+  osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
+  recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -209,66 +210,54 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* init code for LWIP */
-	u_int8_t setipflage = 0;
+
+
+		 /* USER CODE BEGIN StartDefaultTask */
 	
-	Init8025();
-	I2C_EEPROM_ReadBuffer(EE_setipflageaddr, &setipflage, 1);
-	printf("flage:%d  ", setipflage);
-	if (setipflage == 1)
+	printf("systeminit...");
+	BSP_LED_On(LED_RED);
+	EEinit();
+	tcpip_init(NULL, NULL);
+	MX_LWIP_Init();
+	
+	uint16_t Timeout = 5000;
+	uint32_t tickstart = 0U;
+	tickstart = HAL_GetTick();
+	uint32_t  phyreg = 0U;
+
+	
+	if (User_notification(&gnetif))
 	{
-		I2C_EEPROM_ReadBuffer(EE_ipaddr, IP_ADDRESS, 4);
-		for (u_int8_t i = 0; i < 4; i++)
+		do
 		{
-			printf("ip%2d:%d  ", i, IP_ADDRESS[i]);
-		}
-		I2C_EEPROM_ReadBuffer(EE_ipaddr + 4, GATEWAY_ADDRESS, 4);
-		for (u_int8_t i = 0; i < 4; i++)
-		{
-			printf("way%2d:%d  ", i, GATEWAY_ADDRESS[i]);
-		}
-		
-		NETMASK_ADDRESS[0] = 255;
-		NETMASK_ADDRESS[1] = 255;
-		NETMASK_ADDRESS[2] = 255;
-		NETMASK_ADDRESS[3] = 0;
+			HAL_ETH_ReadPHYRegister(&heth, PHY_BSR, &phyreg);
+			HAL_Delay(50);
+			BSP_LED_Toggle(LED_RED);
+		//	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+			/* Check for the Timeout */
+			if ((HAL_GetTick() - tickstart) > Timeout)
+			{
+				/* In case of write timeout */	
+			}
+		} while (((phyreg & PHY_LINKED_STATUS) != PHY_LINKED_STATUS)) ;
+		MX_LWIP_Init();
 	}
-	else
-	{
-		IP_ADDRESS[0] = 192;
-		IP_ADDRESS[1] = 168;
-		IP_ADDRESS[2] = 1;
-		IP_ADDRESS[3] = 90;
-		NETMASK_ADDRESS[0] = 255;
-		NETMASK_ADDRESS[1] = 255;
-		NETMASK_ADDRESS[2] = 255;
-		NETMASK_ADDRESS[3] = 0;
-		GATEWAY_ADDRESS[0] = 192;
-		GATEWAY_ADDRESS[1] = 168;
-		GATEWAY_ADDRESS[2] = 1;
-		GATEWAY_ADDRESS[3] = 1;
-		
-	}
-	
-  MX_LWIP_Init();
-
-  /* USER CODE BEGIN StartDefaultTask */
-
-
-	
-	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	spi1_dac_write_chb(0);
-	spi1_dac_write_cha(0);
-	InitADline();
 //	taskDISABLE_INTERRUPTS(); 	
 //	
 //	I2C_EEPROM_WriteBuffer(EE_timeaddr, a, 5);
 //	
 //	I2C_EEPROM_ReadBuffer(EE_timeaddr, eeprombuff, 48);
 //	taskENABLE_INTERRUPTS();
-
+	BSP_LED_Off(LED_RED);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	bsp_init();
+	/* definition and creation of socketTask */
+//	  osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
+//	  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
   /* Infinite loop */
   for(;;)
   {
+	  
 	  vTaskDelete(NULL);
     osDelay(1);
   }
@@ -417,17 +406,17 @@ void period(void const * argument)
 			  }
 		  }
 	  }
-	  sprintf((char *)time_buf,
-		  "%04d-%02d-%02d %02d:%02d:%02d",
-		  time.year + 2000, 
-		  time.month,
-		  time.day,
-		  time.hour,
-		  time.minute,
-		  time.second);
-	  
-	  printf("%s\n", time_buf);
-	  rede_adc();
+//	  sprintf((char *)time_buf,
+//		  "%04d-%02d-%02d %02d:%02d:%02d",
+//		  time.year + 2000, 
+//		  time.month,
+//		  time.day,
+//		  time.hour,
+//		  time.minute,
+//		  time.second);
+//	  
+//	  printf("%s\n", time_buf);
+//	  rede_adc();
 	  
     osDelay(1000);
   }
@@ -471,11 +460,11 @@ void socket_clien(void const * argument)
 		  crc = usMBCRC16(recv_buffer, (ret - 2));
 		  recv_buffer[(ret - 1)] = crc >> 8;
 		  recv_buffer[(ret - 2)] = crc & 0xff;
-		  FreeRTOS_write(&network,recv_buffer, ret,100);
+	  FreeRTOS_write(&network,recv_buffer, ret,100);
 		  memset(recv_buffer, 0, sizeof(recv_buffer));
 	  }
-	  
-    osDelay(1);
+	  BSP_LED_Toggle(LED_RED);
+    osDelay(100);
   }
   /* USER CODE END socket_clien */
 }
@@ -551,15 +540,68 @@ void socketsever(void const * argument)
 void socket1(void const * argument)
 {
   /* USER CODE BEGIN socket1 */
-
+	//char RECEVbuff[8] =  { 0};
+	uint8_t zero = 0;
+	 
+////		I2C_EEPROM_WriteBuffer(EE_ipaddr, &zero, 20);
+////	I2C_EEPROM_WriteBuffer(EE_timeaddr, &zero, 24);
+////	I2C_EEPROM_WriteBuffer(EE_timeaddr + 24, &zero, 24);
+////	I2C_EEPROM_WriteBuffer(EE_timeflageaddr, &zero, 24);
+////	I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &zero, 10);
+////	I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &zero, 10);
+//	printf("restore");
   /* Infinite loop */
   for(;;)
   {
+	
+	  if (huart1.RxXferCount < 32)
+	  {
+		  printf("rxlen:%d\n", huart1.RxXferCount);
+		   //RxXferCount 告诉我们剩余空间大小，如果剩余空间和总空间不一样，则说明中断收到数据了。	
+		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+	  HAL_UART_Transmit(&huart1, (uint8_t *)aRxBuffer, 8, 100);    //发送接收到得数据
+		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+		
+		  huart1.pRxBuffPtr -= (32 - huart1.RxXferCount);   //将接收指针放回到开始，否则会一直增加哦
+      huart1.RxXferCount = 32;   //修改剩余空间，否则会一直进入这里
 
-	  osDelay(1);
-//	  vTaskDelete(NULL);
-   
+
+	  		  if(strncmp((char const *)aRxBuffer, "$restore", 8) == 0)
+	  		  {
+		  		  printf("\nstart restore\n");
+		  		  HAL_IWDG_Refresh(&hiwdg);
+		  		  taskDISABLE_INTERRUPTS(); 
+		  		
+		  		  			
+	  			  I2C_EEPROM_WriteBuffer(EE_ipaddr, &zero, 12);
+	  	         osDelay(10);
+		  			  I2C_EEPROM_WriteBuffer(EE_timeaddr, &zero, 24);
+		  		  osDelay(10);
+		  			  I2C_EEPROM_WriteBuffer(EE_timeaddr+24, &zero, 24);
+		  		  osDelay(10);
+		  		  HAL_IWDG_Refresh(&hiwdg);
+		  			  I2C_EEPROM_WriteBuffer(EE_timeflageaddr, &zero, 24);
+		  		  osDelay(10);
+		  			  I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &zero, 10);
+		  		  osDelay(10);
+		  			  I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &zero, 10);
+		  		  taskENABLE_INTERRUPTS(); 
+		  		  osDelay(10);
+		  		  printf("restoreok\n");
+		  		  printf("reboot\n");
+		  		  __set_FAULTMASK(1);
+		  		  HAL_NVIC_SystemReset();
+		  
+		  			
+		      }
+	  
+
+		  	  osDelay(100);
+		  //	  vTaskDelete(NULL);
+	  }
+	  osDelay(10);
   }
+	 
   /* USER CODE END socket1 */
 }
 
@@ -649,6 +691,31 @@ eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNDiscrete)
 	return MB_ENOREG;
 }
 
+uint8_t User_notification(struct netif *netif) 
+{
+	if (netif_is_up(netif))
+	{
+#ifdef USE_DHCP
+		/* Update DHCP state machine */
+		DHCP_state = DHCP_START;
+#else
+//		uint8_t iptxt[20];
+//		sprintf((char *)iptxt, "%s", ip4addr_ntoa((const ip4_addr_t *)&netif->ip_addr));
+//		printf("Static IP address: %s\n", iptxt);
+		return 0;
+#endif /* USE_DHCP */
+	}
+	else
+	{  
+#ifdef USE_DHCP
+		/* Update DHCP state machine */
+		DHCP_state = DHCP_LINK_DOWN;
+#endif  /* USE_DHCP */
+		printf("The network cable is not connected \n");
+		return 1;
+	} 
+}
+
 void 
 rede_adc()
 {
@@ -672,6 +739,9 @@ int NetworkConnect(Network* n, char* addr, char* port)
 	struct addrinfo *result = NULL;
 	struct addrinfo hints = { 0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL };
 	static struct timeval tv;
+	int eer;
+	int nNetTimeout = 1000; //1秒
+	TickType_t xTicksToWait = 100 / portTICK_PERIOD_MS;
 
 	n->my_socket = -1;
 	if (addr[0] == '[')
@@ -704,7 +774,9 @@ int NetworkConnect(Network* n, char* addr, char* port)
 	{
 		n->my_socket =	socket(family, type, 0);
 		if (n->my_socket != -1)
-		{
+		{	
+//			eer = setsockopt(n->my_socket，SOL_S0CKET, SO_RCVTIMEO，(char *)&nNetTimeout, sizeof(nNetTimeout));
+//			printf("ferr:%d", eer);
 			if (family == AF_INET)
 				rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
 		}
@@ -715,16 +787,22 @@ int NetworkConnect(Network* n, char* addr, char* port)
 
 int FreeRTOS_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
-	TickType_t xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
+	uint32_t tickstart = 0U;
+	tickstart = HAL_GetTick();
+	uint32_t  phyreg = 0U;
+	int eer;
+/* Check for the Timeout */
+		
+	struct timeval xTicksToWait;
+	xTicksToWait.tv_sec = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
+
 	TimeOut_t xTimeOut;
 	int recvLen = 0;
-
-	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
 	do
 	{
 		int rc = 0;
-
-		setsockopt(n->my_socket, 0, SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		eer = setsockopt(n->my_socket, 0, SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
+		printf("err:%d", eer);
 		rc = recv(n->my_socket, buffer + recvLen, len - recvLen, 0);
 		if (rc > 0)
 			recvLen += rc;
@@ -733,7 +811,13 @@ int FreeRTOS_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 			recvLen = rc;
 			break;
 		}
-	} while (recvLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+		if ((HAL_GetTick() - tickstart) > timeout_ms)
+		{
+			/* In case of write timeout */
+			break;
+		}
+		osDelay(1);
+	} while (recvLen < len  == pdFALSE);
 
 	return recvLen;
 }

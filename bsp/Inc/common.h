@@ -4,7 +4,7 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-typedef void *xSocket_t;
+typedef int xSocket_t;
 typedef struct Network Network;
 
 struct Network
@@ -48,6 +48,16 @@ typedef enum
 extern uint8_t IP_ADDRESS[4];
 extern uint8_t NETMASK_ADDRESS[4];
 extern uint8_t GATEWAY_ADDRESS[4];
-//extern uint8_t	 setip_flage ;
+extern	 uint8_t aRxBuffer[32];
+	 //extern uint8_t	 setip_flage ;
+	 
+extern	 struct netif gnetif;
+	 
+	 void bsp_init(void);
+	 void EEinit(void); 
+	 
+	 
 
 #endif
+	 
+	 

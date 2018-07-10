@@ -28,6 +28,7 @@ int32_t  offset;
 uint8_t filter(int32_t * adcsum)
 {
 	int32_t  value_buff;
+	*adcsum = 0;
 	//	osDelay(500);
 		if(ReadAD(&value_buff)) 
 	{
@@ -40,15 +41,17 @@ uint8_t filter(int32_t * adcsum)
 //		printf("read0\n");
 //	}
 //	printf("adc:%d\n", value_buff);
-
-		*adcsum = value_buff - offset;
+	*adcsum = value_buff ;
+//	*adcsum = value_buff - offset;
 		if (*adcsum<0)
 	{
 		*adcsum = 0;
 	}
-//	*adcsum =	5 * (*adcsum / ((1L << 20) *64 * (0.0005 / 1000)));
-//	*adcsum =	 (*adcsum / 42)*20;
-	*adcsum = *adcsum*(1.2 - (0.000448**adcsum));
+//	printf("ji:%d\n", *adcsum);
+	*adcsum =	5 * (*adcsum / ((1L << 20) *68 * (0.0005 / 1000)));
+////	*adcsum =	 (*adcsum / 42)*20;
+//	*adcsum = *adcsum*(1.2 - (0.000448**adcsum));
+//	printf("jisuan:%d\n",* adcsum);
 
 	return 0;	
 }

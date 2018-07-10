@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * File Name          : gpio.c
   * Description        : This file provides code for the configuration
@@ -131,7 +131,7 @@ void MX_GPIO_Init(void)
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 8, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 
 }
 

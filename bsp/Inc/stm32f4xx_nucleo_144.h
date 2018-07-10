@@ -1,4 +1,4 @@
-/** 
+﻿/** 
   ******************************************************************************
   * @file    stm32f4xx_nucleo_144.h
   * @author  MCD Application Team
@@ -74,9 +74,9 @@ typedef enum
   LED1 = 0,
   LED_GREEN = LED1,
   LED2 = 1,
-  LED_BLUE = LED2,
-  LED3 = 2,
-  LED_RED = LED3
+  LED_RED= LED2,
+//  LED3 = 2,
+//  LED_RED = LED3
 }Led_TypeDef;
 
 typedef enum 
@@ -120,22 +120,22 @@ typedef enum
 /** @defgroup STM32F4XX_NUCLEO_144_LOW_LEVEL_LED STM32F4XX NUCLEO 144 LOW LEVEL LED
   * @{
   */
-#define LEDn                                    3
+#define LEDn                                    2
 
-#define LED1_PIN                                GPIO_PIN_0
+#define LED1_PIN                                GPIO_PIN_2
 #define LED1_GPIO_PORT                          GPIOB
 #define LED1_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
 #define LED1_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()  
 
-#define LED2_PIN                                GPIO_PIN_7
+#define LED2_PIN                                GPIO_PIN_1
 #define LED2_GPIO_PORT                          GPIOB
 #define LED2_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
 #define LED2_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()  
 
-#define LED3_PIN                                GPIO_PIN_14
-#define LED3_GPIO_PORT                          GPIOB
-#define LED3_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
-#define LED3_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()  
+//#define LED3_PIN                                GPIO_PIN_14
+//#define LED3_GPIO_PORT                          GPIOB
+//#define LED3_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
+//#define LED3_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()  
 
 #define LEDx_GPIO_CLK_ENABLE(__INDEX__)   do { if((__INDEX__) == 0) {__HAL_RCC_GPIOB_CLK_ENABLE();} else\
                                                                     {__HAL_RCC_GPIOB_CLK_ENABLE();   }} while(0)	

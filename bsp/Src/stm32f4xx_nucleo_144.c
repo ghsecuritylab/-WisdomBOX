@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * @file    stm32f4xx_nucleo_144.c
   * @author  MCD Application Team
@@ -99,9 +99,9 @@
 /** @defgroup STM32F4XX_NUCLEO_144_LOW_LEVEL_Private_Variables STM32F4XX NUCLEO 144 LOW LEVEL Private Variables
   * @{
   */ 
-GPIO_TypeDef* GPIO_PORT[LEDn] = {LED1_GPIO_PORT, LED2_GPIO_PORT, LED3_GPIO_PORT};
+GPIO_TypeDef* GPIO_PORT[LEDn] = {LED1_GPIO_PORT, LED2_GPIO_PORT};
 
-const uint16_t GPIO_PIN[LEDn] = {LED1_PIN, LED2_PIN, LED3_PIN};
+const uint16_t GPIO_PIN[LEDn] = {LED1_PIN, LED2_PIN};
 
 GPIO_TypeDef* BUTTON_PORT[BUTTONn] = {USER_BUTTON_GPIO_PORT}; 
 const uint16_t BUTTON_PIN[BUTTONn] = {USER_BUTTON_PIN}; 

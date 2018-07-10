@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
   * File Name          : LWIP.c
   * Description        : This file provides initialization code for LWIP
@@ -99,7 +99,7 @@ void MX_LWIP_Init(void)
 //  GATEWAY_ADDRESS[3] = 1;
   
   /* Initilialize the LwIP stack with RTOS */
-  tcpip_init( NULL, NULL );
+//  tcpip_init( NULL, NULL );
 
   /* IP addresses initialization without DHCP (IPv4) */
   IP4_ADDR(&ipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);

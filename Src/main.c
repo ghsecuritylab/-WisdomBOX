@@ -1,4 +1,4 @@
-
+﻿
 /**
   ******************************************************************************
   * @file           : main.c
@@ -87,7 +87,7 @@ void MX_FREERTOS_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-
+uint8_t aRxBuffer[32] =  { 0};
 /* USER CODE END 0 */
 
 /**
@@ -124,8 +124,14 @@ int main(void)
 //  MX_CRC_Init();
   MX_I2C3_Init();
   MX_SPI2_Init();
-  HAL_Delay(1000);
+  HAL_Delay(200);
   /* USER CODE BEGIN 2 */
+	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
+	{
+		/* Turn LED3 on: Transfer error in reception process */
+		//_Error_Handler();
+   
+	}
 //	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -222,9 +228,23 @@ PUTCHAR_PROTOTYPE
 {
 	/* Place your implementation of fputc here */
 	/* e.g. write a character to the USART3 and Loop until the end of transmission */
+	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
 	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
 
 	return ch;
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+	printf("callback");
+	/* Turn LED2 on: Transfer in reception process is correct */
+	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
+	{
+		/* Turn LED3 on: Transfer error in reception process */
+		//_Error_Handler();
+   
+	}
+	
 }
 /* USER CODE END 4 */
 

@@ -61,6 +61,8 @@
 
 #define  setip3   0x42
 #define  setip4   0x43
+#define  setip5   0x44
+#define  setip6   0x46
 
 
 //定时

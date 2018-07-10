@@ -75,8 +75,8 @@ void decoding(uint8_t * data, uint8_t * error)
 				dacstatusa = dac;
 				dac = dac * 3.055;
 				if (dac > 3055) dac = 3055;
-				spi1_dac_write_chb(dac);
-				//spi1_dac_write_cha(dac);	
+				//spi1_dac_write_chb(dac);
+				spi1_dac_write_cha(dac);	
 			
 				break;
 			case setdac2:
@@ -180,8 +180,19 @@ void decoding(uint8_t * data, uint8_t * error)
 				GATEWAY_ADDRESS[3] = data[4];
 
 				break;
+			case setip5:
+				NETMASK_ADDRESS[0] = data[5];
+				NETMASK_ADDRESS[1] = data[4];
+
+				break;
+			case setip6:
+				NETMASK_ADDRESS[2] = data[5];
+				NETMASK_ADDRESS[3] = data[4];
+
+				break;
+					
 			
-		
+			
 			
 			default:*error = 1;
 				break;
@@ -199,11 +210,12 @@ void decoding(uint8_t * data, uint8_t * error)
 			for (uint8_t i = 0; i < 4; i++)
 			{
 				printf("%d\n", GATEWAY_ADDRESS[i]);
-				
 			}
 			setip_flage = 1;
 			I2C_EEPROM_WriteBuffer(EE_ipaddr, IP_ADDRESS, 4);
 			I2C_EEPROM_WriteBuffer(EE_ipaddr + 4, GATEWAY_ADDRESS, 4);
+			I2C_EEPROM_WriteBuffer(EE_ipaddr + 8, NETMASK_ADDRESS, 4);
+			
 			I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &setip_flage, 1);
 			
 		}
@@ -240,11 +252,11 @@ void decoding(uint8_t * data, uint8_t * error)
 		{
 			if (data[9] == 0&& data[10] == 0)
 			{
-				HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_RESET);
+			//	HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_RESET);
 			}
 			else
 			{
-				HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_SET);
+			//	HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_SET);
 			}
 			
 		}

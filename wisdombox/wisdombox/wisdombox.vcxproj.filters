@@ -1197,5 +1197,8 @@
     <ClInclude Include="..\..\bsp\Inc\cat1023.h">
       <Filter>Header files\bsp\Inc</Filter>
     </ClInclude>
+    <ClCompile Include="..\..\bsp\Src\common.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

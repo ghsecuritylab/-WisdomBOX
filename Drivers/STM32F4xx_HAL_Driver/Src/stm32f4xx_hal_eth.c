@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * @file    stm32f4xx_hal_eth.c
   * @author  MCD Application Team
@@ -119,7 +119,7 @@
   * @{
   */
 #define ETH_TIMEOUT_SWRESET               500U  
-#define ETH_TIMEOUT_LINKED_STATE          5000U
+#define ETH_TIMEOUT_LINKED_STATE          3000U
 #define ETH_TIMEOUT_AUTONEGO_COMPLETED    5000U
 
 /**
