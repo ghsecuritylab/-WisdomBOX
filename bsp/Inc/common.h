@@ -4,12 +4,12 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-typedef int xSocket_t;
+
 typedef struct Network Network;
 
 struct Network
 {
-	xSocket_t my_socket;
+	int my_socket;
 	int (*mqttread) (Network*, unsigned char*, int, int);
 	int (*mqttwrite) (Network*, unsigned char*, int, int);
 	void (*disconnect) (Network*);

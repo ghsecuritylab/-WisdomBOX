@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file
  *
  * lwIP Options Configuration
@@ -1792,7 +1792,7 @@
  * SO_RCVTIMEO processing.
  */
 #if !defined LWIP_SO_RCVTIMEO || defined __DOXYGEN__
-#define LWIP_SO_RCVTIMEO                1
+#define LWIP_SO_RCVTIMEO                0
 #endif
 
 /**

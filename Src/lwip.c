@@ -97,8 +97,8 @@ void MX_LWIP_Init(void)
 //  GATEWAY_ADDRESS[1] = 168;
 //  GATEWAY_ADDRESS[2] = 1;
 //  GATEWAY_ADDRESS[3] = 1;
-  
-  /* Initilialize the LwIP stack with RTOS */
+//  
+//  /* Initilialize the LwIP stack with RTOS */
 //  tcpip_init( NULL, NULL );
 
   /* IP addresses initialization without DHCP (IPv4) */

@@ -121,11 +121,11 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
-//  MX_CRC_Init();
+  MX_CRC_Init();
   MX_I2C3_Init();
   MX_SPI2_Init();
-  HAL_Delay(200);
   /* USER CODE BEGIN 2 */
+	
 	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
 	{
 		/* Turn LED3 on: Transfer error in reception process */

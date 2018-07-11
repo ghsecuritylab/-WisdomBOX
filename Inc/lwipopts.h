@@ -137,9 +137,11 @@
 #define CHECKSUM_CHECK_ICMP 0
 /*----- Value in opt.h for CHECKSUM_CHECK_ICMP6: 1 -----*/
 #define CHECKSUM_CHECK_ICMP6 0
+/*----- Default Value for LWIP_DBG_MIN_LEVEL: LWIP_DBG_LEVEL_ALL ---*/
+#define LWIP_DBG_MIN_LEVEL LWIP_DBG_LEVEL_WARNING
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
-
+#define	 LWIP_SO_RCVTIMEO 1
 /* USER CODE END 1 */
 
 #ifdef __cplusplus
