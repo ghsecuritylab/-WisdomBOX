@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+#include "cmsis_os.h"
+
 
 #include "usart.h"
 #include "gpio.h"
@@ -14,6 +16,8 @@
 #include <memory.h>
 #include "eeprom.h"
 #include "cat1023.h"
+#include "usart.h"
+
 
 
 void EEinit(void)
@@ -100,3 +104,51 @@ void	user_LWIP_Init()
 }
 
 
+void User_UART_IRQHandler(UART_HandleTypeDef *huart)
+{
+	uint8_t clean;
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	RS485_MSG_T *rx_msg;
+
+	 rx_msg = &rs485_MSG;
+//	memset(rx_msg, 0, sizeof(*rx_msg));  
+	
+	if ((__HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) != RESET))
+	{
+		/* 关中断*/ 
+	//	taskDISABLE_INTERRUPTS();
+		//  __HAL_UART_ENABLE_IT(huart,UART_IT_IDLE);   //??????
+       rx_msg->Data[rx_msg->lengh++] = (uint8_t)(huart->Instance->DR & (uint8_t)0x00FF);
+
+		__HAL_UART_CLEAR_FLAG(huart, UART_FLAG_RXNE);
+		/* 开中断 */ 
+	//	taskENABLE_INTERRUPTS();
+		
+		
+	}
+	if ((__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE) != RESET))  //空闲中断
+		{
+			/* 关中断*/ 
+		//	taskDISABLE_INTERRUPTS();
+                clean = huart->Instance->DR;
+			
+				clean=huart->Instance->SR;
+			
+			
+			HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+//			HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+//			HAL_UART_Transmit(&huart1, rx_msg->Data, rx_msg->lengh, 0xFFFF);
+//			HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+			
+			
+			/* 向消息队列发数据 */
+		xQueueSendFromISR(recvQueueHandle, (void *)&rx_msg, &xHigherPriorityTaskWoken);
+			/* 如果 xHigherPriorityTaskWoken = pdTRUE ，那么退出中断后切到当前最高优先级任务执行 */
+				portYIELD_FROM_ISR(xHigherPriorityTaskWoken);  
+
+			__HAL_UART_CLEAR_IDLEFLAG(huart);
+//			memset(rx_msg, 0, sizeof(*rx_msg));  
+			/* 开中断 */ 
+		//	taskENABLE_INTERRUPTS();
+		}
+}

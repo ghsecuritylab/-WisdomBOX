@@ -126,12 +126,12 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 	
-	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
-	{
-		/* Turn LED3 on: Transfer error in reception process */
-		//_Error_Handler();
-   
-	}
+//	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
+//	{
+//		/* Turn LED3 on: Transfer error in reception process */
+//		//_Error_Handler();
+//   
+//	}
 //	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
@@ -229,7 +229,7 @@ PUTCHAR_PROTOTYPE
 	/* Place your implementation of fputc here */
 	/* e.g. write a character to the USART3 and Loop until the end of transmission */
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1,100);
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
 
 	return ch;

@@ -1,12 +1,20 @@
 ﻿#ifndef __COMMMOCN_H
 #define __COMMMOCN_H
+
 #include "stm32f4xx_hal.h"
+#include "cmsis_os.h"
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 typedef struct Network Network;
 
+extern osMessageQId recvQueueHandle;
+//osMessageQId MBQueueHandle;
+	 
+	 
 struct Network
 {
 	int my_socket;
@@ -14,6 +22,15 @@ struct Network
 	int (*mqttwrite) (Network*, unsigned char*, int, int);
 	void (*disconnect) (Network*);
 };
+	 
+#define UAST_BUFFER_SIZE  128 
+typedef struct Msg 
+{
+  uint8_t lengh;
+  uint8_t Data[UAST_BUFFER_SIZE]; 
+} RS485_MSG_T;/* 定义一个结构体用于消息队列 */
+	 
+RS485_MSG_T  rs485_MSG ;
 	 
 #define	PORT			  8088
 
@@ -56,7 +73,7 @@ extern	 struct netif gnetif;
 	 void bsp_init(void);
 	 void EEinit(void); 
 	 
-	 
+	 void User_UART_IRQHandler(UART_HandleTypeDef *huart);	 
 
 #endif
 	 

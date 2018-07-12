@@ -87,9 +87,11 @@ osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
 osThreadId uMBpoll_taskHandle;
 osThreadId periodTaskHandle;
-osThreadId socket_clienTasHandle;
+osThreadId socket_cTaskHandle;
 osThreadId socketTaskHandle;
 osThreadId recvTaskHandle;
+osMessageQId recvQueueHandle;
+osMessageQId MBQueueHandle;
 osMutexId MBholdingMutexHandle;
 
 /* USER CODE BEGIN Variables */
@@ -102,6 +104,8 @@ osMutexId MBholdingMutexHandle;
 #define REG_HOLDING_NREGS       130
 
 /* ----------------------- Static variables ---------------------------------*/
+
+
 
 //struct netif gnetif; /* network interface structure */
 
@@ -136,6 +140,8 @@ void FreeRTOS_disconnect(Network*);
 void 
 rede_adc();
 
+
+
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -168,30 +174,30 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-  /* definition and creation of mainMB_TASK */
+//
+//  /* definition and creation of mainMB_TASK */
 //  osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
 //  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
-
-  /* definition and creation of monitorTask */
-  osThreadDef(monitorTask, monitor, osPriorityNormal, 0, 128);
+//
+//  /* definition and creation of monitorTask */
+  osThreadDef(monitorTask, monitor, osPriorityBelowNormal, 0, 128);
   monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
-
-  /* definition and creation of uMBpoll_task */
+//
+//  /* definition and creation of uMBpoll_task */
 //  osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
 //  uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
-
-  /* definition and creation of periodTask */
-  osThreadDef(periodTask, period, osPriorityBelowNormal, 0, 256);
+//
+//  /* definition and creation of periodTask */
+  osThreadDef(periodTask, period, osPriorityNormal, 0, 256);
   periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
-
-  /* definition and creation of socket_clienTas */
-  osThreadDef(socket_clienTas, socket_clien, osPriorityAboveNormal, 0, 1024);
-  socket_clienTasHandle = osThreadCreate(osThread(socket_clienTas), NULL);
-
-  /* definition and creation of socketTask */
-//  osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
-//  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
+//
+//  /* definition and creation of socket_cTask */
+  osThreadDef(socket_cTask, socket_clien, osPriorityAboveNormal, 0, 640);
+  socket_cTaskHandle = osThreadCreate(osThread(socket_cTask), NULL);
+//
+//  /* definition and creation of socketTask */
+  osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
+  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
   /* definition and creation of recvTask */
   osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
@@ -200,6 +206,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the queue(s) */
+  /* definition and creation of recvQueue */
+/* what about the sizeof here??? cd native code */
+	osMessageQDef(recvQueue, 5, sizeof(struct Msg));
+  recvQueueHandle = osMessageCreate(osMessageQ(recvQueue), NULL);
+
+  /* definition and creation of MBQueue */
+/* what about the sizeof here??? cd native code */
+  osMessageQDef(MBQueue, 16, uint16_t);
+  MBQueueHandle = osMessageCreate(osMessageQ(MBQueue), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -210,7 +227,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* init code for LWIP */
-  MX_LWIP_Init();
+//  MX_LWIP_Init();
 
   /* USER CODE BEGIN StartDefaultTask */
 	
@@ -250,6 +267,8 @@ void StartDefaultTask(void const * argument)
 //	taskENABLE_INTERRUPTS();
 	BSP_LED_Off(LED_RED);
 	bsp_init();
+
+
 	/* definition and creation of socketTask */
 //	  osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
 //	  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
@@ -305,14 +324,14 @@ void monitor(void const * argument)
 	MX_IWDG_Init();
 //	
 	static portTickType xLastWakeTime;  
-	const portTickType xFrequency = pdMS_TO_TICKS(1000);  
+	const portTickType xFrequency = pdMS_TO_TICKS(5000);  
    
 	
 	xLastWakeTime = xTaskGetTickCount();
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
+//	  HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 	  HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 //	  rede_adc();
 	  
@@ -435,8 +454,13 @@ void socket_clien(void const * argument)
 	unsigned char recv_buffer[buflen];
 	uint8_t buff[] = { 0x01, 0x02, 0x03 };
 	uint8_t rc = 0;
-	Network network;
-		
+	Network network;	
+	/* -----------------------  ---------------------------------*/
+	BaseType_t xResult;
+	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /*  wait_time */
+	RS485_MSG_T *tcp_c_msg; 
+	memset(tcp_c_msg, 0, sizeof(*tcp_c_msg)); 
+	/* -----------------------  ---------------------------------*/
 	char* address = "192.168.1.92";
 	char* port = "1992";
 	rc = NetworkConnect(&network, address, port);
@@ -446,20 +470,46 @@ void socket_clien(void const * argument)
 			close(network.my_socket);
 			printf("Return code from network connect is %d\n", rc);
 		}
-	
 	printf("socket:%d\n", network.my_socket);
+	/* -----------------------  ---------------------------------*/
+ 
   /* Infinite loop */
   for(;;)
   {
+	  
 	 
-	  if (connectflage)
+//	
+/* -----------------------  ---------------------------------*/
+	  if (connectflage==2)
 	  {
+		  __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE); 
+		  __HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
+		  BSP_LED_On(LED_RED);
+		  HAL_ETH_ReadPHYRegister(&heth, PHY_BSR, &phyreg);
+		  if ((phyreg & PHY_LINKED_STATUS) == PHY_LINKED_STATUS)
+		  {
+			  osDelay(500);  
+			  rc = NetworkConnect(&network, address, port);
+			  if (rc == 0)
+			  {
+				  connectflage = 0;
+				  errorcant = 0;
+				  BSP_LED_Off(LED_RED);
+			  }
+		  }
+	  }
+/* -----------------------  ---------------------------------*/	 
+	  if (connectflage==1)
+	  {
+		  __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE); 
+		  __HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
 		  BSP_LED_On(LED_RED);
 		  osDelay(500);  
 		  rc = NetworkConnect(&network, address, port);
 		  if (rc == 0)
 		  {
 			  connectflage = 0;
+			  errorcant = 0;
 			  BSP_LED_Off(LED_RED);
 		  }
 		  else
@@ -474,11 +524,47 @@ void socket_clien(void const * argument)
 	  {
 		  errorcant = 0;
 	  }
+ /* -----------------------  ---------------------------------*/
+	  
 	  else if (connectflage == 0)
 	  {
-		  errorcant = 0;
-		
+		  
+ /* -----------------------  ---------------------------------*/
+		  __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE); 
+		  __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+		  
+		  xResult = xQueueReceive( recvQueueHandle,
+			  		  /* 消息队列句柄 */
+			  		    (void *)&tcp_c_msg,
+			  		  /* 存储接收到的数据变量 ucQueueMsgValue 中 */ 
+			  		    (TickType_t)xMaxBlockTime); /* 设置阻塞时间 */
+			  	  if (xResult == pdPASS)
+			  	  {
+			  		  BSP_LED_Toggle(LED_RED);
+				  	  
+//			  		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+//			  		  osDelay(10);
+					write(network.my_socket, rs485_MSG.Data, rs485_MSG.lengh );
+//			  		  HAL_UART_Transmit(&huart1, tcp_c_msg->Data, tcp_c_msg->lengh,100);
+//			  		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+			  		  /* 成功接收，并通过串口将数据打印出来 */ 
+			  		  // DbgLog("ATgprs:%s", gprs_msg->usData);
+				  	  
+			  		   memset(&rs485_MSG, 0, sizeof(rs485_MSG));  
+			  	  }
+			  	  else 
+			  	  {
+			  		  /* 超时 */
+				  	//  memset(&rs485_MSG, 0, sizeof(rs485_MSG));  
+			  		  //  ErrLog("超时");
+			  	  } 
+		  
+ /* -----------------------  ---------------------------------*/
+		  
+		  
+/* -----------------------  ---------------------------------*/
 		  ret = FreeRTOS_read(&network, recv_buffer, buflen, 500);
+		  
 		  if (ret > 0)
 		  {
 			  //		  crc = (recv_buffer[(ret - 1)] << 8) | (recv_buffer[(ret - 2)]);
@@ -501,24 +587,23 @@ void socket_clien(void const * argument)
 			   write(network.my_socket, recv_buffer, buflen);
 			  memset(recv_buffer, 0, buflen);
 		  }
+/* -----------------------  ---------------------------------*/
 		  else if (ret == 0)
 		  {
 			  connectflage = 1;	  
 			  close(network.my_socket);
 		  }
 		  else
-		  {
-			  
+		  { 
 			  HAL_ETH_ReadPHYRegister(&heth, PHY_BSR, &phyreg);
 			  if ( (phyreg & PHY_LINKED_STATUS) != PHY_LINKED_STATUS)
 				{
-					connectflage = 1;	  
+					connectflage = 2;	  
 					close(network.my_socket);
 				}
-			
 		  }
-			
-//		    printf("ret:%d\n", ret);
+/* -----------------------  ---------------------------------*/
+		    printf("ret:%d\n", ret);
 		  //  BSP_LED_Toggle(LED_RED);  
 		      write(network.my_socket, buff, 3);
 	  }
@@ -601,68 +686,40 @@ void socketsever(void const * argument)
 void socket1(void const * argument)
 {
   /* USER CODE BEGIN socket1 */
-	//char RECEVbuff[8] =  { 0};
-	uint8_t zero = 0;
-	 
-////		I2C_EEPROM_WriteBuffer(EE_ipaddr, &zero, 20);
-////	I2C_EEPROM_WriteBuffer(EE_timeaddr, &zero, 24);
-////	I2C_EEPROM_WriteBuffer(EE_timeaddr + 24, &zero, 24);
-////	I2C_EEPROM_WriteBuffer(EE_timeflageaddr, &zero, 24);
-////	I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &zero, 10);
-////	I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &zero, 10);
-//	printf("restore");
+//	BaseType_t xResult;
+//	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 璁剧疆绛夊緟鏃堕棿 wait_time */
+//	RS485_MSG_T *tcp_c_msg; 
+//	memset(tcp_c_msg, 0, sizeof(*tcp_c_msg)); 
+//	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE); 
+//	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
   /* Infinite loop */
   for(;;)
   {
-	
-	  if (huart1.RxXferCount < 32)
-	  {
-		  printf("rxlen:%d\n", huart1.RxXferCount);
-		   //RxXferCount 閸涘﹨鐦旈幋鎴滄粦閸撯晙缍戠粚娲？婢堆冪毈閿涘苯顩ч弸婊冨⒖娴ｆ瑧鈹栭梻鏉戞嫲閹崵鈹栭梻缈犵瑝娑??閺嶅嚖绱濋崚娆掝嚛閺勫簼鑵戦弬顓熸暪閸掔増鏆熼幑顔荤啊閵??	
-		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	  HAL_UART_Transmit(&huart1, (uint8_t *)aRxBuffer, 8, 100);    //閸欐垿?浣瑰复閺?璺哄煂瀵版鏆熼幑?
-		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
-		
-		  huart1.pRxBuffPtr -= (32 - huart1.RxXferCount);   //鐏忓棙甯撮弨鑸靛瘹闁藉牊鏂侀崶鐐插煂瀵??婵绱濋崥锕?鍨导姘閻╂潙顤冮崝鐘叉憹
-      huart1.RxXferCount = 32;   //娣囶喗鏁奸崜鈺?缍戠粚娲？閿涘苯鎯侀崚娆庣窗娑??閻╃绻橀崗銉ㄧ箹闁??
-
-
-	  		  if(strncmp((char const *)aRxBuffer, "$restore", 8) == 0)
-	  		  {
-		  		  printf("\nstart restore\n");
-		  		  HAL_IWDG_Refresh(&hiwdg);
-		  		  taskDISABLE_INTERRUPTS(); 
-		  		
-		  		  			
-	  			  I2C_EEPROM_WriteBuffer(EE_ipaddr, &zero, 12);
-	  	         osDelay(10);
-		  			  I2C_EEPROM_WriteBuffer(EE_timeaddr, &zero, 24);
-		  		  osDelay(10);
-		  			  I2C_EEPROM_WriteBuffer(EE_timeaddr+24, &zero, 24);
-		  		  osDelay(10);
-		  		  HAL_IWDG_Refresh(&hiwdg);
-		  			  I2C_EEPROM_WriteBuffer(EE_timeflageaddr, &zero, 24);
-		  		  osDelay(10);
-		  			  I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &zero, 10);
-		  		  osDelay(10);
-		  			  I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &zero, 10);
-		  		  taskENABLE_INTERRUPTS(); 
-		  		  osDelay(10);
-		  		  printf("restoreok\n");
-		  		  printf("reboot\n");
-		  		  __set_FAULTMASK(1);
-		  		  HAL_NVIC_SystemReset();
-		  
-		  			
-		      }
-	  
-
-		  	  osDelay(100);
-		  //	  vTaskDelete(NULL);
-	  }
+//	  xResult = xQueueReceive( recvQueueHandle,
+//		  /* 消息队列句柄 */
+//		    (void *)&tcp_c_msg,
+//		  /* 存储接收到的数据变量 ucQueueMsgValue 中 */ 
+//		    (TickType_t)xMaxBlockTime); /* 设置阻塞时间 */
+//	  if (xResult == pdPASS)
+//	  {
+//		  BSP_LED_Toggle(LED_RED);
+//		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+//		  osDelay(10);
+//
+//		  HAL_UART_Transmit(&huart1, tcp_c_msg->Data, tcp_c_msg->lengh,100);
+//		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+//		  /* 成功接收，并通过串口将数据打印出来 */ 
+//		  // DbgLog("ATgprs:%s", gprs_msg->usData);
+//
+//		   memset(&rs485_MSG, 0, sizeof(rs485_MSG));  
+//	  }
+//	  else 
+//	  {
+//		  /* 超时 */
+//		  //  ErrLog("超时");
+//	  } 
 	  osDelay(10);
-  }
-	 
+	  }
   /* USER CODE END socket1 */
 }
 
@@ -828,7 +885,7 @@ int NetworkConnect(Network* n, char* addr, char* port)
 		n->my_socket =	socket(AF_INET, SOCK_STREAM, 0);
 		if (n->my_socket != -1)
 		{	
-//			eer = setsockopt(n->my_socket閿涘OL_S0CKET, SO_RCVTIMEO閿??(char *)&nNetTimeout, sizeof(nNetTimeout));
+//			eer = setsockopt(n->my_socket闂備焦瀵х粙鎴︻敆閻滀竞_S0CKET, SO_RCVTIMEO闂?????(char *)&nNetTimeout, sizeof(nNetTimeout));
 //			printf("ferr:%d", eer);
 			if (family == AF_INET)
 			rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
@@ -862,9 +919,13 @@ int FreeRTOS_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 		int rc = recv(n->my_socket, buffer, len, 0);
 		if (rc == -1)
 		{ 
+			printf("errno:%d", errno);
 			if (errno == EAGAIN) return -2;
 			else if (errno == EINTR)return -3 ;
+			else if (errno == ECONNRESET)return 0 ; //0閺夆晝鍋炵敮鎾棘椤撶偟纾?
 			else return -1;
+			
+			
 			//if (errno != ENOTCONN && errno != ECONNRESET)
 			//{
 			//}
