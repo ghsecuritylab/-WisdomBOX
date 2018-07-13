@@ -18,7 +18,7 @@
 #include "cat1023.h"
 #include "usart.h"
 
-
+__IO uint32_t user_sTick;
 
 void EEinit(void)
 {
@@ -109,12 +109,17 @@ void User_UART_IRQHandler(UART_HandleTypeDef *huart)
 	uint8_t clean;
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	RS485_MSG_T *rx_msg;
-
+//	char * buff = "$rs485$";
 	 rx_msg = &rs485_MSG;
 //	memset(rx_msg, 0, sizeof(*rx_msg));  
 	
 	if ((__HAL_UART_GET_FLAG(huart, UART_FLAG_RXNE) != RESET))
 	{
+		if (rx_msg->lengh==0)
+		{
+			rx_msg->lengh += 7;
+		//	rx_msg->Data += *buff;
+		}
 		/* 关中断*/ 
 	//	taskDISABLE_INTERRUPTS();
 		//  __HAL_UART_ENABLE_IT(huart,UART_IT_IDLE);   //??????
@@ -152,3 +157,25 @@ void User_UART_IRQHandler(UART_HandleTypeDef *huart)
 		//	taskENABLE_INTERRUPTS();
 		}
 }
+
+void user_Tick(void)
+{
+	user_sTick++;
+}
+uint32_t user_GetTick(void)
+{
+	
+	return user_sTick;
+}
+
+
+
+
+
+
+
+
+
+
+
+

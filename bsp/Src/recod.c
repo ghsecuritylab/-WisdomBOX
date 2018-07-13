@@ -190,10 +190,7 @@ void decoding(uint8_t * data, uint8_t * error)
 				NETMASK_ADDRESS[3] = data[4];
 
 				break;
-					
-			
-			
-			
+
 			default:*error = 1;
 				break;
 			}	
@@ -215,9 +212,7 @@ void decoding(uint8_t * data, uint8_t * error)
 			I2C_EEPROM_WriteBuffer(EE_ipaddr, IP_ADDRESS, 4);
 			I2C_EEPROM_WriteBuffer(EE_ipaddr + 4, GATEWAY_ADDRESS, 4);
 			I2C_EEPROM_WriteBuffer(EE_ipaddr + 8, NETMASK_ADDRESS, 4);
-			
 			I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &setip_flage, 1);
-			
 		}
 		else if (data[3] == 0x03)
 		{

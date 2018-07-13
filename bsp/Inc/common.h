@@ -12,8 +12,9 @@
 typedef struct Network Network;
 
 extern osMessageQId recvQueueHandle;
-//osMessageQId MBQueueHandle;
-	 
+	extern osSemaphoreId TIMEBinarySemHandle;
+//extern osMessageQId MBQueueHandle;
+		__IO uint32_t usTick; 
 	 
 struct Network
 {
@@ -74,7 +75,8 @@ extern	 struct netif gnetif;
 	 void EEinit(void); 
 	 
 	 void User_UART_IRQHandler(UART_HandleTypeDef *huart);	 
-
+	 uint32_t user_GetTick(void);
+	 void user_Tick(void);
 #endif
 	 
 	 

@@ -31,7 +31,7 @@ uint8_t I2C_EEPROM_ReadBuffer(uint16_t Reg, uint8_t *pBuffer, uint16_t Length)
 {
 	uint8_t time = 10;
 	/* Check if the EEPROM is ready for a new operation */
-//	HAL_I2C_IsDeviceReady(&hi2c3, CAT1023_ADDR_READ, 100, 300);
+	HAL_I2C_IsDeviceReady(&hi2c3, CAT1023_ADDR_READ, 100, 300);
 //	while ((HAL_I2C_GetState(&hi2c3) != HAL_I2C_STATE_READY) && time--)
 //	{
 //		osDelay(10);

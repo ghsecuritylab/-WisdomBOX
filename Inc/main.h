@@ -89,6 +89,8 @@
 #define RELAY8_GPIO_Port GPIOD
 #define _485DIR_Pin GPIO_PIN_8
 #define _485DIR_GPIO_Port GPIOB
+#define restore_Pin GPIO_PIN_1
+#define restore_GPIO_Port GPIOE
 
 /* ########################## Assert Selection ############################## */
 /**
