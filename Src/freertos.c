@@ -135,9 +135,9 @@ int NetworkConnect(Network *n, char *addr, char *port);
 int FreeRTOS_read(Network *, unsigned char *, int, int);
 int FreeRTOS_write(Network *, unsigned char *, int, int);
 void FreeRTOS_disconnect(Network *);
-
+int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms);
 void rede_adc();
-
+void tcp_server(int conn);
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -240,7 +240,7 @@ void StartDefaultTask(void const *argument)
 
 	/* USER CODE BEGIN StartDefaultTask */
 
-	printf("systeminit...");
+//	printf("systeminit...");
 	BSP_LED_On(LED_RED);
 	EEinit();
 	tcpip_init(NULL, NULL);
@@ -420,6 +420,7 @@ void period(void const *argument)
 		if (xResult == pdTRUE)
 		{
 			//osDelay(10);
+			HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 			BSP_LED_Toggle(LED_GREEN);
 			UpdateDateTime(&time);
 			if (modeflage == 0)
@@ -506,7 +507,7 @@ void socket_clien(void const *argument)
 		close(network.my_socket);
 		printf("Return code from network connect is %d\n", rc);
 	}
-	printf("socket:%d\n", network.my_socket);
+	printf("c_socket:%d\n", network.my_socket);
 	/* -----------------------  ---------------------------------*/
 	tickstart = user_GetTick();
 	/* Infinite loop */
@@ -557,10 +558,13 @@ void socket_clien(void const *argument)
 		if (errorcant > 5)
 		{
 			errorcant = 0;
+			__set_FAULTMASK(1);
+			HAL_NVIC_SystemReset();
 		}
 		/* -----------------------  ---------------------------------*/
 		else if (connectflage == 0)
 		{
+			printf("my:%d", network.my_socket);
 			/* -----------------------  ---------------------------------*/
 			__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 			__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
@@ -587,7 +591,9 @@ void socket_clien(void const *argument)
 				{
 
 					HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+					taskENTER_CRITICAL();
 					HAL_UART_Transmit(&huart1, (recv_buffer + 7), (ret - 7), 100); // (strlen((char*)recv_buffer)
+					taskEXIT_CRITICAL();
 					HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
 					memset(recv_buffer, 0, ret);
 				}
@@ -610,7 +616,9 @@ void socket_clien(void const *argument)
 					recv_buffer[(ret - 1)] = crc >> 8;
 					recv_buffer[(ret - 2)] = crc & 0xff;
 					FreeRTOS_write(&network, recv_buffer, ret, 100);
+					taskENTER_CRITICAL();
 					write(network.my_socket, recv_buffer, buflen);
+					taskEXIT_CRITICAL();
 					memset(recv_buffer, 0, ret);
 				}
 			}
@@ -649,6 +657,7 @@ void socket_clien(void const *argument)
 void socketsever(void const *argument)
 {
 	/* USER CODE BEGIN socketsever */
+	uint32_t phyreg = 0U;
 	__IO uint32_t uwCRCValue = 0;
 	uint8_t buflen = 32;
 	int8_t ret;
@@ -657,101 +666,53 @@ void socketsever(void const *argument)
 	unsigned char recv_buffer[buflen];
 	int sock, newconn, size;
 	struct sockaddr_in address, remotehost;
-	uint8_t Timeout = 10;
-	uint32_t tickstart = 0U;
-	struct timeval interval = { 200/ 1000, (200 % 1000) * 1000 };
+	int8_t Timeout = 10;
+	int32_t tickstart = 0U;
+	struct timeval interval;
+	interval.tv_sec = 2;
+	interval.tv_usec = 0;
+	
+	/* create a TCP socket */
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+	{
+		printf("can not create socket\r\n");
+		osDelay(1);
+		//	OSTimeDlyHMSM(0, 0, 1, 0);
+//			continue;
+	}
 
+	address.sin_family = AF_INET;
+	address.sin_port = htons(8088);     // mosbus tcp port
+	address.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		printf("can not bind socket\r\n");
+		close(sock);
+		osDelay(1);
+		//OSTimeDlyHMSM(0, 0, 2, 0);
+//		continue;
+	}
+
+	/* listen for incoming connections (TCP listen backlog = 1) */
+	listen(sock, 1);
+
+	size = sizeof(remotehost);
 	/* Infinite loop */
 	for (;;)
 	{
-		/* create a TCP socket */
-		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		{
-			printf("can not create socket");
-			return;
-		}
-
-		/* bind to port 80 at any interface */
-		address.sin_family = AF_INET;
-		address.sin_port = htons(PORT);
-		address.sin_addr.s_addr = INADDR_ANY;
-		if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
-		{
-			printf("can not bind socket");
-			close(sock);
-			return;
-		}
-		/* listen for connections (TCP listen backlog = 3) */
-		listen(sock, 1);
-		size = sizeof(remotehost);
 		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
-		if (newconn<0)
+		if (newconn >= 0)
 		{
-			close(sock);
+			//close(sock);   //一次只接受一个连接
+			printf("connect socket\r\n");
+			tcp_server(newconn);
+		}
+		else
+		{
+			//close(sock);
 			close(newconn);
 		}
-		close(sock);    //一次只接受一个连接
-		tickstart = user_GetTick();
-		printf("newconn:%d\n", newconn);
-		while (newconn >= 0)
-		{
-			
-//			ret = 1;
-//			while (ret > 0)
-//			{
-				setsockopt(newconn, SOL_SOCKET, SO_RCVTIMEO, (char *)&interval, sizeof(struct timeval));
-				ret = recv(newconn, recv_buffer, buflen,0);
-			printf("recv:%d\n", ret);
-			if (ret>0)
-			{
-				tickstart = user_GetTick();
-				crc = (recv_buffer[(ret - 1)] << 8) | (recv_buffer[(ret - 2)]);
-
-				if (crc != usMBCRC16(recv_buffer, (ret - 2)))
-				{
-					close(newconn);
-					break;
-				}
-				decoding(recv_buffer, &error);
-				if (error == 1)
-				{
-					close(newconn);
-					break;
-				}
-				crc = usMBCRC16(recv_buffer, (ret - 2));
-				recv_buffer[(ret - 1)] = crc >> 8;
-				recv_buffer[(ret - 2)] = crc & 0xff;
-				write(newconn, recv_buffer, ret);
-				memset(recv_buffer, 0, sizeof(recv_buffer));
-			}
-			if (ret == -1)
-			{
-				printf("serrno:%d\n", errno);
-//				if (errno == EAGAIN || errno == EINTR) ;
-//				
-//				//	else if (errno == EINTR)return -3 ;
-//				else if(errno != 0);
-				
-
-				//if (errno != ENOTCONN && errno != ECONNRESET)
-				//{
-				//}
-			}
-			if ((user_GetTick() - tickstart) > Timeout)
-			{
-				close(newconn);
-				break;
-				/* In case of write timeout */	
-			}
-			else if (ret==0)
-			{
-				close(newconn);
-				break;
-			}
-
-		   osDelay(10);
-		}
-		osDelay(10);
 	}
 	/* USER CODE END socketsever */
 }
@@ -915,7 +876,7 @@ void rede_adc()
 	filter(&adctemp);
 	usRegHoldingBuf[11] = adctemp << 16;
 	usRegHoldingBuf[11] |= adctemp;
-	printf("adcvule:%d\n", adctemp);
+//	printf("adcvule:%d\n", adctemp);
 }
 
 int NetworkConnect(Network *n, char *addr, char *port)
@@ -969,9 +930,102 @@ int NetworkConnect(Network *n, char *addr, char *port)
 
 	return rc;
 }
+void tcp_server(int conn) 
+{
+	int buflen = 128;
+	int ret;
+	unsigned char recv_buffer[128];
+	uint8_t  error;
+	uint16_t crc;
+	uint8_t Timeout = 240;
+	int32_t tickstart = 0U;
+	printf("start modbus tcp\r\n");
+//		ret = recv(conn, recv_buffer, buflen,0); 
+//	while (ret > 0) 
+//	{
+//		ret = read(conn, recv_buffer, buflen);
+//		write(conn, recv_buffer, ret);
+//		memset(recv_buffer, 0, sizeof(recv_buffer));
+//	}
+	
+	//ret = server_read(conn, recv_buffer, buflen, 200);
+	tickstart = user_GetTick();
+	while ((ret = server_read(conn, recv_buffer, buflen, 200)) != 0) 
+	{
+		if (ret>0)
+		{
+			tickstart = user_GetTick();
+			
+			crc = (recv_buffer[(ret - 1)] << 8) | (recv_buffer[(ret - 2)]);
+
+			if (crc != usMBCRC16(recv_buffer, (ret - 2)))
+			{
+//				close(conn);
+				break;
+			}
+			decoding(recv_buffer, &error);
+			if (error == 1)
+			{
+//				close(conn);
+				break;
+			}
+			crc = usMBCRC16(recv_buffer, (ret - 2));
+			recv_buffer[(ret - 1)] = crc >> 8;
+			recv_buffer[(ret - 2)] = crc & 0xff;
+			taskENTER_CRITICAL();
+			write(conn, recv_buffer, ret);
+			taskEXIT_CRITICAL();
+			memset(recv_buffer, 0, sizeof(recv_buffer));
+		}
+	//	printf("s:%d", ret);
+		if ((user_GetTick() - tickstart) > Timeout)
+		{
+			printf("close:%d\n", conn);
+			break;
+			/* In case of write timeout */	
+		}
+	}
+	//shutdown(conn, SHUT_RD);
+	close(conn);
+	printf("close modbus tcp\r\n");
+}
+int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms)
+{
+	uint8_t myerrno;
+	struct timeval interval = { timeout_ms / portTICK_PERIOD_MS / 1000, (timeout_ms % (portTICK_PERIOD_MS * 1000)) * 1000 };
+	//	if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
+	//	{
+	//		interval.tv_sec = 0;
+	//		interval.tv_usec = 1000;
+	//	}
+
+	setsockopt(newconn, SOL_SOCKET, SO_RCVTIMEO, (char *)&interval, sizeof(struct timeval));
+	//	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&xTicksToWait, sizeof( xTicksToWait));
+	//	printf("err:%d", eer);
+	//	int bytes = 0;
+	//	while (bytes < len)
+	//	{
+	int rc = recv(newconn, buffer, len, 0);
+	myerrno = errno;
+	if (rc == -1)
+	{
+	//	printf("servererrno:%d\n", myerrno);
+		if (myerrno == EAGAIN || myerrno == EINTR) return -2;
+		//	else if (errno == EINTR)return -3 ;
+		else if(myerrno > 0)  return 0;    //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧绾??
+		else return - 1;
+
+		//if (errno != ENOTCONN && errno != ECONNRESET)
+		//{
+		//}
+	}
+	return rc;
+}
 
 int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 {
+	
+	uint8_t myerrno;
 	struct timeval interval = {timeout_ms / portTICK_PERIOD_MS / 1000, (timeout_ms % (portTICK_PERIOD_MS * 1000)) * 1000};
 	//	if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
 	//	{
@@ -986,13 +1040,14 @@ int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
 	//	while (bytes < len)
 	//	{
 	int rc = recv(n->my_socket, buffer, len, 0);
+	myerrno = errno;
 	if (rc == -1)
 	{
-		printf("errno:%d\n", errno);
-		if (errno == EAGAIN || errno == EINTR)
+		//printf("errno:%d\n", myerrno);
+		if (myerrno == EAGAIN || myerrno == EINTR)
 			return -2;
 		//	else if (errno == EINTR)return -3 ;
-		else if (errno != 0)  return 0; //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧绾??
+		else if(myerrno > 0)  return 0;  //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧绾??
 		else
 			return -1;
 

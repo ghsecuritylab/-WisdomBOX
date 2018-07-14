@@ -1,4 +1,4 @@
-
+﻿
 /**
   ******************************************************************************
   * File Name          : lwipopts.h
@@ -146,6 +146,8 @@
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
 #define	 LWIP_SO_RCVTIMEO 1
+#define SYS_LIGHTWEIGHT_PROT    1
+	 
 /* USER CODE END 1 */
 
 #ifdef __cplusplus

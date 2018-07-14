@@ -1,4 +1,4 @@
-/**
+﻿/**
   ******************************************************************************
   * File Name          : gpio.c
   * Description        : This file provides code for the configuration
@@ -88,7 +88,7 @@ void MX_GPIO_Init(void)
                           |SPI2_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(WDI_GPIO_Port, WDI_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(WDI_GPIO_Port, WDI_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, RELAY5_Pin|RELAY6_Pin|RELAY7_Pin|RELAY8_Pin, GPIO_PIN_RESET);

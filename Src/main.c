@@ -71,6 +71,7 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 
@@ -114,19 +115,21 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+//	HAL_Delay(1000);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
-  MX_CRC_Init();
+//  MX_CRC_Init();
   MX_I2C3_Init();
   MX_SPI2_Init();
   MX_IWDG_Init();
-  /* USER CODE BEGIN 2 */
 
+  /* USER CODE BEGIN 2 */
+	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
+//	HAL_Delay(1000);
 //	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
 //	{
 //		/* Turn LED3 on: Transfer error in reception process */
@@ -137,6 +140,7 @@ int main(void)
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
 ////	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 //	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+////	HAL_Delay(2000);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -230,23 +234,26 @@ PUTCHAR_PROTOTYPE
 	/* Place your implementation of fputc here */
 	/* e.g. write a character to the USART3 and Loop until the end of transmission */
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1,100);
+	while (HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY)
+	{
+	} 
+	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&ch, 1);
 	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
 
 	return ch;
 }
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-	printf("callback");
-	/* Turn LED2 on: Transfer in reception process is correct */
-	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
-	{
-		/* Turn LED3 on: Transfer error in reception process */
-		//_Error_Handler();
-   
-	}
-	
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+//{
+//	printf("callback");
+//	/* Turn LED2 on: Transfer in reception process is correct */
+//	if (HAL_UART_Receive_IT(&huart1, (uint8_t *)aRxBuffer, 32) != HAL_OK)
+//	{
+//		/* Turn LED3 on: Transfer error in reception process */
+//		//_Error_Handler();
+//   
+//	}
+//	
+//}
 /* USER CODE END 4 */
 
 /**

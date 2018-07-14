@@ -241,6 +241,7 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 	BaseType_t  xHigherPriorityTaskWoken = pdFALSE;
 	user_Tick();
+//	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 	// 发送信号量
 	// 传递参数判断是否有高优先级任务就绪
 	xSemaphoreGiveFromISR(TIMEBinarySemHandle, &xHigherPriorityTaskWoken);
