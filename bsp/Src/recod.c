@@ -17,7 +17,7 @@ uint8_t gpiostatus1= 0;
 u_int16_t  dacstatusa= 0;
 u_int16_t  dacstatusb= 0;
 //uint8_t setip_flage = 0;
-void decoding(uint8_t * data, uint8_t * error)
+void decoding(uint8_t * data, uint8_t * error, uint8_t *lenth)
 {
 	STDATETIME time;
 	struct    tm *now_ptm;
@@ -30,6 +30,7 @@ void decoding(uint8_t * data, uint8_t * error)
 	uint8_t	 mode_flage = 0;
 	*error = 0;
 	uint8_t setip_flage = 0;
+	*lenth = 0;
 	if (data[0] == 0 && data[1] == 0x06 && data[2] == 0) //写入
 		{
 			if (data[3] >= 0x47&&data[3] <= 0x5f)
@@ -64,6 +65,30 @@ void decoding(uint8_t * data, uint8_t * error)
 			case setrelay2:
 				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_RESET);
 				else	HAL_GPIO_WritePin(RELAY2_GPIO_Port, RELAY2_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay3:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY3_GPIO_Port, RELAY3_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY3_GPIO_Port, RELAY3_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay4:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY4_GPIO_Port, RELAY4_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY4_GPIO_Port, RELAY4_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay5:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY5_GPIO_Port, RELAY5_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY5_GPIO_Port, RELAY5_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay6:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY6_GPIO_Port, RELAY6_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY6_GPIO_Port, RELAY6_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay7:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY7_GPIO_Port, RELAY7_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY7_GPIO_Port, RELAY7_Pin, GPIO_PIN_SET);
+				break;
+			case setrelay8:
+				if (data[4] == 0&&data[5] == 0) 	HAL_GPIO_WritePin(RELAY8_GPIO_Port, RELAY8_Pin, GPIO_PIN_RESET);
+				else	HAL_GPIO_WritePin(RELAY8_GPIO_Port, RELAY8_Pin, GPIO_PIN_SET);
 				break;
 			
 			case setdac1:
@@ -264,6 +289,7 @@ void decoding(uint8_t * data, uint8_t * error)
 	}
 	else if (data[0] == 0 && data[1] == 0x03 &&data[2] == 0)
 	{
+		*lenth = 2;
 		switch (data[3])
 		{
 			
@@ -274,8 +300,10 @@ void decoding(uint8_t * data, uint8_t * error)
 		case 0x0a:
 			if (data[5] == 1)//读条光
 			{
-				data[4] = dacstatusa >> 8;
-				data[5] = dacstatusa & 0xff;	
+				data[4] = 0;
+				data[5] = 0x01;	
+				data[6] = dacstatusa >> 8;
+				data[7] = dacstatusa & 0xff;	
 			}
 
 			
@@ -284,8 +312,10 @@ void decoding(uint8_t * data, uint8_t * error)
 			if (data[5] == 1)
 			{
 //				printf("adcb:%d", dacstatusb);
-				data[4] = dacstatusb >> 8;
-				data[5] = dacstatusb & 0xff;
+					data[4] = 0;
+				data[5] = 0x01;	
+				data[6] = dacstatusa >> 8;
+				data[7] = dacstatusa & 0xff;	
 			}
 			
 			break;
@@ -298,43 +328,59 @@ void decoding(uint8_t * data, uint8_t * error)
 				//				taskENABLE_INTERRUPTS(); 
 								adc = (uint16_t)adcvule;
 
-				data[4] = adc >> 8;
-				data[5] = adc & 0xff;
+				data[4] = 0;
+				data[5] = 0x01;	
+				data[6] = dacstatusa >> 8;
+				data[7] = dacstatusa & 0xff;	
 			}
 			
 			break;
 		case 0x28:
 			UpdateDateTime(&time);
-			data[5] = time.hour;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.hour;
 			break;
 		case 0x29:
 			UpdateDateTime(&time);
-			data[5] = time.minute;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.minute;
 			
 			break;
 		case 0x2a:
 			UpdateDateTime(&time);
-			data[5] = time.second;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.second;
 			
 			break;
 		case 0x2c:
 			UpdateDateTime(&time);
-			data[5] = time.year;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.year;
 			
 			break;
 		case 0x2d:
 			UpdateDateTime(&time);
-			data[5] = time.month;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.month;
 			
 			break;
 		case 0x2e:
 			UpdateDateTime(&time);
-			data[5] = time.day;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.day;
 			
 			break;
 		case 0x2F:
 			UpdateDateTime(&time);
-			data[5] = time.week;
+			data[4] = 0;
+			data[5] = 0x01;	
+			data[7] = time.week;
 			
 			break;
 		default:*error = 1;

@@ -35,6 +35,13 @@
 //控制
 #define  setrelay1 0x01
 #define  setrelay2 0x02
+#define  setrelay3 0x03
+#define  setrelay4 0x04
+#define  setrelay5 0x05
+#define  setrelay6 0x06
+#define  setrelay7 0x07
+#define  setrelay8 0x08
+
 #define  setdac1   0x0a
 #define  setdac2   0x0b
 //电流
@@ -76,7 +83,7 @@
  extern "C" {
 #endif	 
 	 
-void decoding(uint8_t * data, uint8_t * error);
+	 void decoding(uint8_t * data, uint8_t * error, uint8_t *lenth);
 	 
 
 	 

@@ -41,8 +41,8 @@ uint8_t filter(int32_t * adcsum)
 //		printf("read0\n");
 //	}
 //	printf("adc:%d\n", value_buff);
-	*adcsum = value_buff ;
-//	*adcsum = value_buff - offset;
+//	*adcsum = value_buff ;
+	*adcsum = value_buff - offset;
 		if (*adcsum<0)
 	{
 		*adcsum = 0;

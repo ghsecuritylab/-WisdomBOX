@@ -251,6 +251,7 @@ void StartDefaultTask(void const *argument)
 	uint32_t tickstart = 0U;
 	tickstart = HAL_GetTick();
 	uint32_t phyreg = 0U;
+	
 
 	if (User_notification(&gnetif))
 	{
@@ -465,7 +466,7 @@ void period(void const *argument)
 		//		  time.second);
 		//
 		//	  printf("%s\n", time_buf);
-		//	  rede_adc();
+			  rede_adc();
 
 		osDelay(1);
 	}
@@ -477,16 +478,17 @@ void socket_clien(void const *argument)
 {
 	/* USER CODE BEGIN socket_clien */
 	const uint8_t rs485[7] = "$rs485$";
+	const uint8_t keeplive[24] = "keeplive_v1.0";
 	uint32_t phyreg = 0U;
 	u_int8_t buflen = 135;
-	u_int8_t error;
+	u_int8_t error,lenth;
 	u_int16_t crc;
 	u_int8_t connectflage = 0, errorcant = 0;
 	int ret;
 	unsigned char recv_buffer[buflen];
 
 	/* -----------------------  ---------------------------------*/
-	uint8_t buff[] = {0x01, 0x02, 0x03};
+	uint8_t buff[] = "keeplive_v1.0";
 	uint8_t rc = 0;
 	Network network;
 	/* -----------------------  ---------------------------------*/
@@ -606,7 +608,8 @@ void socket_clien(void const *argument)
 						FreeRTOS_disconnect(&network);
 						break;
 					}
-					decoding(recv_buffer, &error);
+					decoding(recv_buffer, &error, &lenth);
+					ret = ret + lenth;
 					if (error == 1)
 					{
 						FreeRTOS_disconnect(&network);
@@ -642,6 +645,27 @@ void socket_clien(void const *argument)
 			{
 				tickstart = user_GetTick();
 				write(network.my_socket, buff, 3);
+				ret = FreeRTOS_read(&network, recv_buffer, buflen, 20000);
+				if (ret > 0) 
+				{
+					if(strncmp((char *)&recv_buffer, (char *)&keeplive, 13)==0）
+						{
+							
+						}
+					else
+						{
+						connectflage = 1;
+				close(network.my_socket);
+						}
+						
+					
+				}
+				else
+						{
+						connectflage = 1;
+					close(network.my_socket);
+							}
+			
 				/* In case of write timeout */	
 			}
 			
@@ -874,9 +898,9 @@ void rede_adc()
 	//	InitADline();
 
 	filter(&adctemp);
-	usRegHoldingBuf[11] = adctemp << 16;
-	usRegHoldingBuf[11] |= adctemp;
-//	printf("adcvule:%d\n", adctemp);
+//	usRegHoldingBuf[11] = adctemp << 16;
+//	usRegHoldingBuf[11] |= adctemp;
+	printf("adcvule:%d\n", adctemp);
 }
 
 int NetworkConnect(Network *n, char *addr, char *port)
@@ -935,7 +959,7 @@ void tcp_server(int conn)
 	int buflen = 128;
 	int ret;
 	unsigned char recv_buffer[128];
-	uint8_t  error;
+	uint8_t  error, lenth;
 	uint16_t crc;
 	uint8_t Timeout = 240;
 	int32_t tickstart = 0U;
@@ -963,7 +987,8 @@ void tcp_server(int conn)
 //				close(conn);
 				break;
 			}
-			decoding(recv_buffer, &error);
+			decoding(recv_buffer, &error,&lenth);
+			ret = ret + lenth;
 			if (error == 1)
 			{
 //				close(conn);
