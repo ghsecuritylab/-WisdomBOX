@@ -247,7 +247,7 @@ void EXTI15_10_IRQHandler(void)
 	xSemaphoreGiveFromISR(TIMEBinarySemHandle, &xHigherPriorityTaskWoken);
 	// 判断是否需要触发任务切换
 	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+//	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	
   /* USER CODE END EXTI15_10_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);

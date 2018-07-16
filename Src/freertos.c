@@ -466,7 +466,7 @@ void period(void const *argument)
 		//		  time.second);
 		//
 		//	  printf("%s\n", time_buf);
-			  rede_adc();
+			//  rede_adc();
 
 		osDelay(1);
 	}
@@ -478,7 +478,7 @@ void socket_clien(void const *argument)
 {
 	/* USER CODE BEGIN socket_clien */
 	const uint8_t rs485[7] = "$rs485$";
-	const uint8_t keeplive[24] = "keeplive_v1.0";
+	const uint8_t keeplive[] ="keeplive_v1.0";
 	uint32_t phyreg = 0U;
 	u_int8_t buflen = 135;
 	u_int8_t error,lenth;
@@ -488,11 +488,11 @@ void socket_clien(void const *argument)
 	unsigned char recv_buffer[buflen];
 
 	/* -----------------------  ---------------------------------*/
-	uint8_t buff[] = "keeplive_v1.0";
+	uint8_t buff[] ="keeplive_v1.0";
 	uint8_t rc = 0;
 	Network network;
 	/* -----------------------  ---------------------------------*/
-	uint8_t Timeout = 3;
+	uint8_t Timeout = 60;
 	uint32_t tickstart = 0U;
 	/* -----------------------  ---------------------------------*/
 	BaseType_t xResult;
@@ -500,8 +500,8 @@ void socket_clien(void const *argument)
 	RS485_MSG_T *tcp_c_msg;
 	memset(tcp_c_msg, 0, sizeof(*tcp_c_msg));
 	/* -----------------------  ---------------------------------*/
-	char *address = "192.168.1.92";
-	char *port = "1992";
+	char *address = "192.168.1.94";
+	char *port = "8899";
 	rc = NetworkConnect(&network, address, port);
 	if (rc != 0)
 	{
@@ -605,15 +605,15 @@ void socket_clien(void const *argument)
 
 					if (crc != usMBCRC16(recv_buffer, (ret - 2)))
 					{
-						FreeRTOS_disconnect(&network);
-						break;
+						connectflage = 1;
+						close(network.my_socket);
 					}
 					decoding(recv_buffer, &error, &lenth);
 					ret = ret + lenth;
 					if (error == 1)
 					{
-						FreeRTOS_disconnect(&network);
-						break;
+						connectflage = 1;
+						close(network.my_socket);
 					}
 					crc = usMBCRC16(recv_buffer, (ret - 2));
 					recv_buffer[(ret - 1)] = crc >> 8;
@@ -644,27 +644,25 @@ void socket_clien(void const *argument)
 			if ((user_GetTick() - tickstart) > Timeout)
 			{
 				tickstart = user_GetTick();
-				write(network.my_socket, buff, 3);
+				write(network.my_socket, buff, sizeof(keeplive));
 				ret = FreeRTOS_read(&network, recv_buffer, buflen, 20000);
 				if (ret > 0) 
 				{
-					if(strncmp((char *)&recv_buffer, (char *)&keeplive, 13)==0）
+					if(strncmp((char *)&recv_buffer, (char *)&keeplive, 8)==0)
 						{
 							
 						}
 					else
 						{
-						connectflage = 1;
-				close(network.my_socket);
+							connectflage = 1;
+							close(network.my_socket);
 						}
-						
-					
 				}
 				else
-						{
+					{
 						connectflage = 1;
-					close(network.my_socket);
-							}
+						close(network.my_socket);
+					}
 			
 				/* In case of write timeout */	
 			}
