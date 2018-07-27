@@ -1,4 +1,4 @@
-﻿
+
 /**
   ******************************************************************************
   * @file           : main.c
@@ -71,7 +71,6 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 
@@ -123,11 +122,10 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
-//  MX_CRC_Init();
+  MX_CRC_Init();
   MX_I2C3_Init();
-  MX_SPI2_Init();
   MX_IWDG_Init();
-
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 //	HAL_Delay(1000);

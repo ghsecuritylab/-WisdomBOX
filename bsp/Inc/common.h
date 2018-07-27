@@ -77,6 +77,8 @@ extern	 struct netif gnetif;
 	 void User_UART_IRQHandler(UART_HandleTypeDef *huart);	 
 	 uint32_t user_GetTick(void);
 	 void user_Tick(void);
+	
+	 
 #endif
 	 
 	 

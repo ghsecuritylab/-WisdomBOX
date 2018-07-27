@@ -41,7 +41,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../bsp/Inc;../../freemodbustcp/modbus/include;../../freemodbustcp/port;C:/sysgcc/arm-eabi/arm-eabi/include/c++/7.2.0;../../freemodbustcp/modbus/tcp;../../freemodbustcp/modbus/ascii;../../freemodbustcp/modbus/rtu;..\..\Inc;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\..\Drivers\STM32F4xx_HAL_Driver\Inc;..\..\Middlewares\Third_Party\FreeRTOS\Source\include;..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\..\Middlewares\Third_Party\LwIP\src\include;..\..\Middlewares\Third_Party\LwIP\src\include\lwip;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot;..\..\Middlewares\Third_Party\LwIP\src\include\netif;..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp;..\..\Middlewares\Third_Party\LwIP\src\include\posix;..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys;..\..\Middlewares\Third_Party\LwIP\system;..\..\Middlewares\Third_Party\LwIP\system\arch;..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../bsp/Inc;../../freemodbustcp/modbus/include;../../freemodbustcp/port;C:/sysgcc/arm-eabi/arm-eabi/include/c++/7.2.0;../../freemodbustcp/modbus/tcp;../../freemodbustcp/modbus/ascii;../../freemodbustcp/modbus/rtu;..\..\Inc;..\..\Drivers\CMSIS\Include;..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\..\Drivers\STM32F4xx_HAL_Driver\Inc;..\..\Middlewares\Third_Party\FreeRTOS\Source\include;..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\..\Middlewares\Third_Party\LwIP\src\include;..\..\Middlewares\Third_Party\LwIP\src\include\lwip;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\apps;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\priv;..\..\Middlewares\Third_Party\LwIP\src\include\lwip\prot;..\..\Middlewares\Third_Party\LwIP\src\include\netif;..\..\Middlewares\Third_Party\LwIP\src\include\netif\ppp;..\..\Middlewares\Third_Party\LwIP\src\include\posix;..\..\Middlewares\Third_Party\LwIP\src\include\posix\sys;..\..\Middlewares\Third_Party\LwIP\system;..\..\Middlewares\Third_Party\LwIP\system\arch;..\..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;../../mqtt;../../Src;../../mqtt/src;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;flash_layout;STM32F407xx;USE_FREERTOS;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions />
       <CLanguageStandard />
@@ -191,6 +191,8 @@
     <ClCompile Include="..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dma.c" />
     <ClCompile Include="..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2c.c" />
     <ClCompile Include="..\..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2c_ex.c" />
+    <ClCompile Include="mymqtt.c" />
+    <ClInclude Include="mymqtt.h" />
     <None Include="stm32.props" />
     <ClCompile Include="$(BSP_ROOT)\STM32F4xxxx\StartupFiles\startup_stm32f407xx.c" />
     <ClInclude Include="..\..\Inc\gpio.h" />
@@ -408,5 +410,26 @@
     <ClInclude Include="..\..\bsp\Inc\recod.h" />
     <ClCompile Include="..\..\bsp\Src\cat1023.c" />
     <ClInclude Include="..\..\bsp\Inc\cat1023.h" />
+    <ClCompile Include="..\..\mqtt\MQTTClient.c" />
+    <ClCompile Include="..\..\mqtt\MQTTFreeRTOS.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTConnectClient.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTConnectServer.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTDeserializePublish.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTFormat.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTPacket.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTSerializePublish.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTSubscribeClient.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTSubscribeServer.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTUnsubscribeClient.c" />
+    <ClCompile Include="..\..\mqtt\src\MQTTUnsubscribeServer.c" />
+    <ClInclude Include="..\..\mqtt\MQTTClient.h" />
+    <ClInclude Include="..\..\mqtt\MQTTFreeRTOS.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTConnect.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTFormat.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTPacket.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTPublish.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTSubscribe.h" />
+    <ClInclude Include="..\..\mqtt\src\MQTTUnsubscribe.h" />
+    <ClInclude Include="..\..\mqtt\src\StackTrace.h" />
   </ItemGroup>
 </Project>

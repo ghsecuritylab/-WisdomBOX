@@ -202,6 +202,18 @@
     <Filter Include="Header files\freemodbustcp\port">
       <UniqueIdentifier>{573e3320-79ad-4bec-82b4-f8c5c3e1587d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\mqtt">
+      <UniqueIdentifier>{e17a3dd7-6421-4199-a708-88af073f69e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\mqtt\src">
+      <UniqueIdentifier>{f9884f3d-3b1e-40e5-b299-dd60e20af6b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\mqtt">
+      <UniqueIdentifier>{c7f1d613-4bdf-4e6f-975a-9ca0ea29c260}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\mqtt\src">
+      <UniqueIdentifier>{4ce110ab-cb5a-499d-a842-1951cb8eb429}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\gpio.c">
@@ -1200,5 +1212,76 @@
     <ClCompile Include="..\..\bsp\Src\common.c">
       <Filter>Source files\bsp\Src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mqtt\MQTTClient.c">
+      <Filter>Source files\mqtt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\MQTTFreeRTOS.c">
+      <Filter>Source files\mqtt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTConnectClient.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTConnectServer.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTDeserializePublish.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTFormat.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTPacket.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTSerializePublish.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTSubscribeClient.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTSubscribeServer.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTUnsubscribeClient.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mqtt\src\MQTTUnsubscribeServer.c">
+      <Filter>Source files\mqtt\src</Filter>
+    </ClCompile>
+    <ClInclude Include="..\..\mqtt\MQTTClient.h">
+      <Filter>Header files\mqtt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\MQTTFreeRTOS.h">
+      <Filter>Header files\mqtt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTConnect.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTFormat.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTPacket.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTPublish.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTSubscribe.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\MQTTUnsubscribe.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mqtt\src\StackTrace.h">
+      <Filter>Header files\mqtt\src</Filter>
+    </ClInclude>
+    <ClCompile Include="mymqtt.c">
+      <Filter>Source files\bsp\Src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mymqtt.h">
+      <Filter>Header files\bsp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

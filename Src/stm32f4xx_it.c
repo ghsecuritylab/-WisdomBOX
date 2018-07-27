@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * @file    stm32f4xx_it.c
   * @brief   Interrupt Service Routines.
@@ -242,10 +242,10 @@ void EXTI15_10_IRQHandler(void)
 	BaseType_t  xHigherPriorityTaskWoken = pdFALSE;
 	user_Tick();
 //	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
-	// 发送信号量
-	// 传递参数判断是否有高优先级任务就绪
+	// 发�?�信号量
+	// 传�?�参数判断是否有高优先级任务就绪
 	xSemaphoreGiveFromISR(TIMEBinarySemHandle, &xHigherPriorityTaskWoken);
-	// 判断是否需要触发任务切换
+	// 判断是否�?要触发任务切�?
 	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 //	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	

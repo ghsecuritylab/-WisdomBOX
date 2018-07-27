@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * File Name          : freertos.c
   * Description        : Code for freertos applications
@@ -51,7 +51,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 
-/* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */     
 
 /* ------------------------ LWIP includes --------------------------------- */
 #include "lwip/api.h"
@@ -61,6 +61,7 @@
 #include "lwip/netdb.h"
 #include "lwip.h"
 #include "netif/ethernet.h"
+#include "lwip/apps/mqtt.h"
 /* ------------------------ FreeModbus includes --------------------------- */
 #include "mb.h"
 #include "iwdg.h"
@@ -79,6 +80,7 @@
 #include "eeprom.h"
 #include "cat1023.h"
 #include "mbcrc.h"
+#include "mymqtt.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
@@ -87,9 +89,8 @@ osThreadId mainMB_TASKHandle;
 osThreadId monitorTaskHandle;
 osThreadId uMBpoll_taskHandle;
 osThreadId periodTaskHandle;
-osThreadId socket_cTaskHandle;
+osThreadId mqtt_TaskHandle;
 osThreadId socketTaskHandle;
-osThreadId recvTaskHandle;
 osMessageQId recvQueueHandle;
 osMessageQId MBQueueHandle;
 osMessageQId timeQueueHandle;
@@ -116,16 +117,14 @@ static USHORT usRegHoldingBuf[REG_HOLDING_NREGS];
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
-void StartDefaultTask(void const *argument);
-void vMBServerTask(void const *argument);
-void monitor(void const *argument);
-void uMBpoll(void const *argument);
-void period(void const *argument);
-void socket_clien(void const *argument);
-void socketsever(void const *argument);
-void socket1(void const *argument);
+void StartDefaultTask(void const * argument);
+void vMBServerTask(void const * argument);
+void monitor(void const * argument);
+void uMBpoll(void const * argument);
+void period(void const * argument);
+void mqtt_clien(void const * argument);
+void socket_sever(void const * argument);
 
-extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
@@ -144,101 +143,94 @@ void tcp_server(int conn);
 
 /* Init FreeRTOS */
 
-void MX_FREERTOS_Init(void)
-{
-	/* USER CODE BEGIN Init */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* Create the mutex(es) */
-	/* definition and creation of MBholdingMutex */
-	osMutexDef(MBholdingMutex);
-	MBholdingMutexHandle = osMutexCreate(osMutex(MBholdingMutex));
+  /* Create the mutex(es) */
+  /* definition and creation of MBholdingMutex */
+  osMutexDef(MBholdingMutex);
+  MBholdingMutexHandle = osMutexCreate(osMutex(MBholdingMutex));
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* Create the semaphores(s) */
-	/* definition and creation of TIMEBinarySem */
-	osSemaphoreDef(TIMEBinarySem);
-	TIMEBinarySemHandle = osSemaphoreCreate(osSemaphore(TIMEBinarySem), 1);
+  /* Create the semaphores(s) */
+  /* definition and creation of TIMEBinarySem */
+  osSemaphoreDef(TIMEBinarySem);
+  TIMEBinarySemHandle = osSemaphoreCreate(osSemaphore(TIMEBinarySem), 1);
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* Create the thread(s) */
-	/* definition and creation of defaultTask */
-	osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
-	defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityHigh, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-	/* definition and creation of mainMB_TASK */
-	//  osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
-	//  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
+  /* definition and creation of mainMB_TASK */
+//  osThreadDef(mainMB_TASK, vMBServerTask, osPriorityAboveNormal, 0, 512);
+//  mainMB_TASKHandle = osThreadCreate(osThread(mainMB_TASK), NULL);
 
-	/* definition and creation of monitorTask */
-	osThreadDef(monitorTask, monitor, osPriorityBelowNormal, 0, 128);
-	monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
+  /* definition and creation of monitorTask */
+  osThreadDef(monitorTask, monitor, osPriorityBelowNormal, 0, 128);
+  monitorTaskHandle = osThreadCreate(osThread(monitorTask), NULL);
 
-	/* definition and creation of uMBpoll_task */
-	//  osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
-	//  uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
+  /* definition and creation of uMBpoll_task */
+//  osThreadDef(uMBpoll_task, uMBpoll, osPriorityNormal, 0, 512);
+//  uMBpoll_taskHandle = osThreadCreate(osThread(uMBpoll_task), NULL);
 
-	/* definition and creation of periodTask */
-	osThreadDef(periodTask, period, osPriorityNormal, 0, 256);
-	periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
+  /* definition and creation of periodTask */
+  osThreadDef(periodTask, period, osPriorityNormal, 0, 256);
+  periodTaskHandle = osThreadCreate(osThread(periodTask), NULL);
 
-	/* definition and creation of socket_cTask */
-	osThreadDef(socket_cTask, socket_clien, osPriorityAboveNormal, 0, 640);
-	socket_cTaskHandle = osThreadCreate(osThread(socket_cTask), NULL);
+  /* definition and creation of mqtt_Task */
+  osThreadDef(mqtt_Task, mqtt_clien, osPriorityAboveNormal, 0, 640);
+  mqtt_TaskHandle = osThreadCreate(osThread(mqtt_Task), NULL);
 
-	/* definition and creation of socketTask */
-	osThreadDef(socketTask, socketsever, osPriorityAboveNormal, 0, 512);
-	socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
+  /* definition and creation of socketTask */
+  osThreadDef(socketTask, socket_sever, osPriorityAboveNormal, 0, 512);
+  socketTaskHandle = osThreadCreate(osThread(socketTask), NULL);
 
-	/* definition and creation of recvTask */
-	osThreadDef(recvTask, socket1, osPriorityNormal, 0, 128);
-	recvTaskHandle = osThreadCreate(osThread(recvTask), NULL);
-
-	/* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-	/* Create the queue(s) */
-	/* definition and creation of recvQueue */
-	/* what about the sizeof here??? cd native code */
-	//  osMessageQDef(recvQueue, 5, uint16_t);
-	//  recvQueueHandle = osMessageCreate(osMessageQ(recvQueue), NULL);
+  /* Create the queue(s) */
+  /* definition and creation of recvQueue */
+/* what about the sizeof here??? cd native code */
+//  osMessageQDef(recvQueue, 5, uint16_t);
+//  recvQueueHandle = osMessageCreate(osMessageQ(recvQueue), NULL);
 
-	/* definition and creation of MBQueue */
-	/* what about the sizeof here??? cd native code */
-	osMessageQDef(MBQueue, 16, uint16_t);
-	MBQueueHandle = osMessageCreate(osMessageQ(MBQueue), NULL);
+  /* definition and creation of MBQueue */
+/* what about the sizeof here??? cd native code */
+  osMessageQDef(MBQueue, 16, uint16_t);
+  MBQueueHandle = osMessageCreate(osMessageQ(MBQueue), NULL);
 
-	/* definition and creation of timeQueue */
-	/* what about the sizeof here??? cd native code */
-	osMessageQDef(timeQueue, 1, uint16_t);
-	timeQueueHandle = osMessageCreate(osMessageQ(timeQueue), NULL);
+  /* definition and creation of timeQueue */
+/* what about the sizeof here??? cd native code */
+  osMessageQDef(timeQueue, 1, uint16_t);
+  timeQueueHandle = osMessageCreate(osMessageQ(timeQueue), NULL);
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
 	osMessageQDef(recvQueue, 5, sizeof(struct Msg));
 	recvQueueHandle = osMessageCreate(osMessageQ(recvQueue), NULL);
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 }
 
 /* StartDefaultTask function */
-void StartDefaultTask(void const *argument)
+void StartDefaultTask(void const * argument)
 {
-	/* init code for LWIP */
-	//  MX_LWIP_Init();
 
-	/* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 
 //	printf("systeminit...");
 	BSP_LED_On(LED_RED);
@@ -290,13 +282,13 @@ void StartDefaultTask(void const *argument)
 		vTaskDelete(NULL);
 		osDelay(1);
 	}
-	/* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* vMBServerTask function */
-void vMBServerTask(void const *argument)
+void vMBServerTask(void const * argument)
 {
-	/* USER CODE BEGIN vMBServerTask */
+  /* USER CODE BEGIN vMBServerTask */
 
 	eMBErrorCode xStatus;
 
@@ -325,13 +317,13 @@ void vMBServerTask(void const *argument)
 		(void)eMBClose();
 		osDelay(10);
 	}
-	/* USER CODE END vMBServerTask */
+  /* USER CODE END vMBServerTask */
 }
 
 /* monitor function */
-void monitor(void const *argument)
+void monitor(void const * argument)
 {
-	/* USER CODE BEGIN monitor */
+  /* USER CODE BEGIN monitor */
 	//	MX_IWDG_Init();
 	//
 	static portTickType xLastWakeTime;
@@ -348,13 +340,13 @@ void monitor(void const *argument)
 		HAL_IWDG_Refresh(&hiwdg);
 		vTaskDelayUntil(&xLastWakeTime, xFrequency);
 	}
-	/* USER CODE END monitor */
+  /* USER CODE END monitor */
 }
 
 /* uMBpoll function */
-void uMBpoll(void const *argument)
+void uMBpoll(void const * argument)
 {
-	/* USER CODE BEGIN uMBpoll */
+  /* USER CODE BEGIN uMBpoll */
 	uint8_t Relay;
 	uint8_t DI;
 	uint16_t dac;
@@ -387,13 +379,13 @@ void uMBpoll(void const *argument)
 		}
 		osDelay(10);
 	}
-	/* USER CODE END uMBpoll */
+  /* USER CODE END uMBpoll */
 }
 
 /* period function */
-void period(void const *argument)
+void period(void const * argument)
 {
-	/* USER CODE BEGIN period */
+  /* USER CODE BEGIN period */
 	/* Infinite loop */
 	__IO uint32_t usTick;
 	STDATETIME time;
@@ -402,7 +394,7 @@ void period(void const *argument)
 	uint16_t dac;
 	uint8_t modeflage;
 	BaseType_t xResult;
-	//	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 鐠佸墽鐤嗙粵澶婄窡閺冨爼妫? wait_time */
+	//	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 鐠佸墽鐤嗙粵澶婄窡閺冨爼�?? wait_time */
 
 	I2C_EEPROM_ReadBuffer(EE_timeaddr, time_buf, 48);
 	//
@@ -416,7 +408,7 @@ void period(void const *argument)
 
 	for (;;)
 	{
-		// 信号量获取 设置阻塞时间 10 ticks
+		// 信号量获�? 设置阻塞时间 10 ticks
 		xResult = xSemaphoreTake(TIMEBinarySemHandle, (TickType_t)portMAX_DELAY);
 		if (xResult == pdTRUE)
 		{
@@ -452,8 +444,8 @@ void period(void const *argument)
 		}
 		else
 		{
-			/* 瓒呮椂 */
-			//  ErrLog("瓒呮椂");
+			/* 瓒呮�? */
+			//  ErrLog("瓒呮�?");
 		}
 
 		//	  sprintf((char *)time_buf,
@@ -470,215 +462,30 @@ void period(void const *argument)
 
 		osDelay(1);
 	}
-	/* USER CODE END period */
+  /* USER CODE END period */
 }
 
-/* socket_clien function */
-void socket_clien(void const *argument)
+/* mqtt_clien function */
+void mqtt_clien(void const * argument)
 {
-	/* USER CODE BEGIN socket_clien */
-	const uint8_t rs485[7] = "$rs485$";
-	const uint8_t keeplive[] ="keeplive_v1.0";
-	uint32_t phyreg = 0U;
-	u_int8_t buflen = 135;
-	u_int8_t error,lenth;
-	u_int16_t crc;
-	u_int8_t connectflage = 0, errorcant = 0;
-	int ret;
-	unsigned char recv_buffer[buflen];
-
-	/* -----------------------  ---------------------------------*/
-	uint8_t buff[] ="keeplive_v1.0";
-	uint8_t rc = 0;
-	Network network;
-	/* -----------------------  ---------------------------------*/
-	uint8_t Timeout = 60;
-	uint32_t tickstart = 0U;
-	/* -----------------------  ---------------------------------*/
-	BaseType_t xResult;
-	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(100); /*  wait_time */
-	RS485_MSG_T *tcp_c_msg;
-	memset(tcp_c_msg, 0, sizeof(*tcp_c_msg));
-	/* -----------------------  ---------------------------------*/
-	char *address = "192.168.1.94";
-	char *port = "8899";
-	rc = NetworkConnect(&network, address, port);
-	if (rc != 0)
-	{
-		connectflage = 1;
-		close(network.my_socket);
-		printf("Return code from network connect is %d\n", rc);
-	}
-	printf("c_socket:%d\n", network.my_socket);
-	/* -----------------------  ---------------------------------*/
-	tickstart = user_GetTick();
-	/* Infinite loop */
-	for (;;)
-	{
-		//
-		/* -----------------------  ---------------------------------*/
-		if (connectflage == 2)
-		{
-			__HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
-			__HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
-			BSP_LED_On(LED_RED);
-			HAL_ETH_ReadPHYRegister(&heth, PHY_BSR, &phyreg);
-			if ((phyreg & PHY_LINKED_STATUS) == PHY_LINKED_STATUS)
-			{
-				osDelay(500);
-				rc = NetworkConnect(&network, address, port);
-				if (rc == 0)
-				{
-					connectflage = 0;
-					errorcant = 0;
-					BSP_LED_Off(LED_RED);
-				}
-			}
-		}
-		/* -----------------------  ---------------------------------*/
-		if (connectflage == 1)
-		{
-			__HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
-			__HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
-			//  BSP_LED_On(LED_RED);
-			osDelay(200);
-			rc = NetworkConnect(&network, address, port);
-			if (rc == 0)
-			{
-				connectflage = 0;
-				errorcant = 0;
-				BSP_LED_Off(LED_RED);
-			}
-			else
-			{
-				osDelay(10);
-				close(network.my_socket);
-				printf("Return code from network connect is %d\n", rc);
-			}
-			errorcant++;
-		}
-		if (errorcant > 5)
-		{
-			errorcant = 0;
-			__set_FAULTMASK(1);
-			HAL_NVIC_SystemReset();
-		}
-		/* -----------------------  ---------------------------------*/
-		else if (connectflage == 0)
-		{
-			printf("my:%d", network.my_socket);
-			/* -----------------------  ---------------------------------*/
-			__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-			__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-
-			xResult = xQueueReceive(recvQueueHandle,
-									(void *)&tcp_c_msg,
-									(TickType_t)xMaxBlockTime); /* time */
-			if (xResult == pdPASS)
-			{
-				tickstart = user_GetTick();
-				memcpy(tcp_c_msg->Data, rs485, sizeof(rs485));
-				//  FreeRTOS_write(&network, tcp_c_msg->Data, tcp_c_msg->lengh, 100);
-				write(network.my_socket, tcp_c_msg->Data, tcp_c_msg->lengh);
-				memset(&rs485_MSG, 0, sizeof(rs485_MSG));
-			}
-/* -----------------------  ---------------------------------*/
-
-/* -----------------------  ---------------------------------*/
-			ret = FreeRTOS_read(&network, recv_buffer, buflen, 200);
-			if (ret > 0)
-			{
-				tickstart = user_GetTick();
-				if (strncmp((char *)&recv_buffer, (char *)&rs485, 7) == 0)
-				{
-
-					HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-					taskENTER_CRITICAL();
-					HAL_UART_Transmit(&huart1, (recv_buffer + 7), (ret - 7), 100); // (strlen((char*)recv_buffer)
-					taskEXIT_CRITICAL();
-					HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
-					memset(recv_buffer, 0, ret);
-				}
-				else
-				{
-					crc = (recv_buffer[(ret - 1)] << 8) | (recv_buffer[(ret - 2)]);
-
-					if (crc != usMBCRC16(recv_buffer, (ret - 2)))
-					{
-						connectflage = 1;
-						close(network.my_socket);
-					}
-					decoding(recv_buffer, &error, &lenth);
-					ret = ret + lenth;
-					if (error == 1)
-					{
-						connectflage = 1;
-						close(network.my_socket);
-					}
-					crc = usMBCRC16(recv_buffer, (ret - 2));
-					recv_buffer[(ret - 1)] = crc >> 8;
-					recv_buffer[(ret - 2)] = crc & 0xff;
-					FreeRTOS_write(&network, recv_buffer, ret, 100);
-					taskENTER_CRITICAL();
-					write(network.my_socket, recv_buffer, buflen);
-					taskEXIT_CRITICAL();
-					memset(recv_buffer, 0, ret);
-				}
-			}
-			/* -----------------------  ---------------------------------*/
-			else if (ret == 0)
-			{
-				connectflage = 1;
-				close(network.my_socket);
-			}
-			else
-			{
-				HAL_ETH_ReadPHYRegister(&heth, PHY_BSR, &phyreg);
-				if ((phyreg & PHY_LINKED_STATUS) != PHY_LINKED_STATUS)
-				{
-					connectflage = 2;
-					close(network.my_socket);
-				}
-			}
-			/* -----------------------  ---------------------------------*/
-			if ((user_GetTick() - tickstart) > Timeout)
-			{
-				tickstart = user_GetTick();
-				write(network.my_socket, buff, sizeof(keeplive));
-				ret = FreeRTOS_read(&network, recv_buffer, buflen, 20000);
-				if (ret > 0) 
-				{
-					if(strncmp((char *)&recv_buffer, (char *)&keeplive, 8)==0)
-						{
-							
-						}
-					else
-						{
-							connectflage = 1;
-							close(network.my_socket);
-						}
-				}
-				else
-					{
-						connectflage = 1;
-						close(network.my_socket);
-					}
-			
-				/* In case of write timeout */	
-			}
-			
-		}//连接
-
-		osDelay(100);
-		//	  printf("cantf:%d\n", connectflage);
-	}
-	/* USER CODE END socket_clien */
+	
+  /* USER CODE BEGIN mqtt_clien */
+	mqtt_client_t static_client;
+	static_client.conn_state = 0;
+	mqtt_do_connect(&static_client);
+  /* Infinite loop */
+  for(;;)
+  {
+ my_mqtt_publish(&static_client, (void *)mqtt_pub_request_cb);
+    osDelay(1000);
+  }
+  /* USER CODE END mqtt_clien */
 }
 
-/* socketsever function */
-void socketsever(void const *argument)
+/* socket_sever function */
+void socket_sever(void const * argument)
 {
-	/* USER CODE BEGIN socketsever */
+  /* USER CODE BEGIN socket_sever */
 	uint32_t phyreg = 0U;
 	__IO uint32_t uwCRCValue = 0;
 	uint8_t buflen = 32;
@@ -704,7 +511,7 @@ void socketsever(void const *argument)
 	}
 
 	address.sin_family = AF_INET;
-	address.sin_port = htons(8088);     // mosbus tcp port
+	address.sin_port = htons(8088);      // mosbus tcp port
 	address.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(sock, (struct sockaddr *)&address, sizeof(address)) < 0)
@@ -726,7 +533,6 @@ void socketsever(void const *argument)
 		newconn = accept(sock, (struct sockaddr *)&remotehost, (socklen_t *)&size);
 		if (newconn >= 0)
 		{
-			//close(sock);   //一次只接受一个连接
 			printf("connect socket\r\n");
 			tcp_server(newconn);
 		}
@@ -736,48 +542,7 @@ void socketsever(void const *argument)
 			close(newconn);
 		}
 	}
-	/* USER CODE END socketsever */
-}
-
-/* socket1 function */
-void socket1(void const *argument)
-{
-	/* USER CODE BEGIN socket1 */
-	//	BaseType_t xResult;
-	//	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 鐠佸墽鐤嗙粵澶婄窡閺冨爼妫? wait_time */
-	//	RS485_MSG_T *tcp_c_msg;
-	//	memset(tcp_c_msg, 0, sizeof(*tcp_c_msg));
-	//	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-	//	__HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-	/* Infinite loop */
-	for (;;)
-	{
-		//	  xResult = xQueueReceive( recvQueueHandle,
-		//		  /* 娑堟伅闃熷垪鍙ユ焺 */
-		//		    (void *)&tcp_c_msg,
-		//		  /* 瀛樺偍鎺ユ敹鍒扮殑鏁版嵁鍙橀噺 ucQueueMsgValue 涓? */
-		//		    (TickType_t)xMaxBlockTime); /* 璁剧疆闃诲鏃堕棿 */
-		//	  if (xResult == pdPASS)
-		//	  {
-		//		  BSP_LED_Toggle(LED_RED);
-		//		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-		//		  osDelay(10);
-		//
-		//		  HAL_UART_Transmit(&huart1, tcp_c_msg->Data, tcp_c_msg->lengh,100);
-		//		  HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
-		//		  /* 鎴愬姛鎺ユ敹锛屽苟閫氳繃涓插彛灏嗘暟鎹墦鍗板嚭鏉? */
-		//		  // DbgLog("ATgprs:%s", gprs_msg->usData);
-		//
-		//		   memset(&rs485_MSG, 0, sizeof(rs485_MSG));
-		//	  }
-		//	  else
-		//	  {
-		//		  /* 瓒呮椂 */
-		//		  //  ErrLog("瓒呮椂");
-		//	  }
-		osDelay(10);
-	}
-	/* USER CODE END socket1 */
+  /* USER CODE END socket_sever */
 }
 
 /* USER CODE BEGIN Application */
@@ -900,58 +665,6 @@ void rede_adc()
 //	usRegHoldingBuf[11] |= adctemp;
 	printf("adcvule:%d\n", adctemp);
 }
-
-int NetworkConnect(Network *n, char *addr, char *port)
-{
-	struct sockaddr_in address;
-	int rc = -1;
-	sa_family_t family = AF_INET;
-	struct addrinfo *result = NULL;
-	struct addrinfo hints = {0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL};
-	//	static struct timeval tv;
-
-	if ((rc = getaddrinfo(addr, port, &hints, &result)) == 0)
-	{
-		struct addrinfo *res = result;
-		while (res)
-		{
-			if (res->ai_family == AF_INET)
-			{
-				result = res;
-				break;
-			}
-			res = res->ai_next;
-		}
-		if (result->ai_family == AF_INET)
-		{
-			address.sin_port = ((struct sockaddr_in *)(result->ai_addr))->sin_port; // htons(port);
-			address.sin_family = AF_INET;
-			address.sin_addr = ((struct sockaddr_in *)(result->ai_addr))->sin_addr;
-		}
-		else
-			rc = -1;
-		freeaddrinfo(result);
-	}
-	if (rc == 0)
-	{
-		n->my_socket = socket(AF_INET, SOCK_STREAM, 0);
-		if (n->my_socket != -1)
-		{
-			//			eer = setsockopt(n->my_socket闂傚倷鐒︾?笛呯矙閹达富鏁嗛柣婊?绔瀇S0CKET, SO_RCVTIMEO闂??????(char *)&nNetTimeout, sizeof(nNetTimeout));
-			//			printf("ferr:%d", eer);
-			if (family == AF_INET)
-				rc = connect(n->my_socket, (struct sockaddr *)&address, sizeof(address));
-		}
-	}
-	//	if (rc == 0)
-	//	{
-	////		rc = getsockname(n->my_socket, (struct sockaddr *)&address, &len);
-	//		//if (error  >= 0) printf("Server %s connected, local port %d\n", srv, ntohs(servaddr.sin_port));
-	////		return n->my_socket;
-	//	}
-
-	return rc;
-}
 void tcp_server(int conn) 
 {
 	int buflen = 128;
@@ -1035,7 +748,7 @@ int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms)
 	//	printf("servererrno:%d\n", myerrno);
 		if (myerrno == EAGAIN || myerrno == EINTR) return -2;
 		//	else if (errno == EINTR)return -3 ;
-		else if(myerrno > 0)  return 0;    //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧绾??
+		else if(myerrno > 0)  return 0;    //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧�???
 		else return - 1;
 
 		//if (errno != ENOTCONN && errno != ECONNRESET)
@@ -1045,63 +758,8 @@ int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms)
 	return rc;
 }
 
-int FreeRTOS_read(Network *n, unsigned char *buffer, int len, int timeout_ms)
-{
-	
-	uint8_t myerrno;
-	struct timeval interval = {timeout_ms / portTICK_PERIOD_MS / 1000, (timeout_ms % (portTICK_PERIOD_MS * 1000)) * 1000};
-	//	if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
-	//	{
-	//		interval.tv_sec = 0;
-	//		interval.tv_usec = 1000;
-	//	}
 
-	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&interval, sizeof(struct timeval));
-	//	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&xTicksToWait, sizeof( xTicksToWait));
-	//	printf("err:%d", eer);
-	//	int bytes = 0;
-	//	while (bytes < len)
-	//	{
-	int rc = recv(n->my_socket, buffer, len, 0);
-	myerrno = errno;
-	if (rc == -1)
-	{
-		//printf("errno:%d\n", myerrno);
-		if (myerrno == EAGAIN || myerrno == EINTR)
-			return -2;
-		//	else if (errno == EINTR)return -3 ;
-		else if(myerrno > 0)  return 0;  //0闁哄鏅濋崑鐐垫暜閹绢喖妫樻い鎾跺仧绾??
-		else
-			return -1;
 
-		//if (errno != ENOTCONN && errno != ECONNRESET)
-		//{
-		//}
-	}
-	//		else if (rc == 0) return -1;
-	//else if (rc==0) break;
-	//		else bytes += rc;
-	//	}
-	return rc;
-}
-
-int FreeRTOS_write(Network *n, unsigned char *buffer, int len, int timeout_ms)
-{
-	struct timeval tv;
-
-	tv.tv_sec = 0;					/* 30 Secs Timeout */
-	tv.tv_usec = timeout_ms * 1000; // Not init'ing this can cause strange errors
-
-	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
-	int rc = write(n->my_socket, buffer, len);
-	return rc;
-}
-
-void FreeRTOS_disconnect(Network *n)
-{
-	close(n->my_socket);
-	//	closesocket(n->my_socket);
-}
 
 //int keepalive(Client* c)
 //{
