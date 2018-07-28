@@ -15,13 +15,14 @@
 	ip4_addr_t broker_ipaddr;
 	struct mqtt_connect_client_info_t ci;
 	err_t err;
-	IP4_ADDR(& broker_ipaddr, 176, 122, 166, 83);
+	IP4_ADDR(& broker_ipaddr, 192, 168, 1, 113);
 	/* Setup an empty client info structure */
 	memset(& ci, 0, sizeof(ci));
 	/* Minimal amount of information required is client identifier, so set it here */
 	ci.client_id = "mymqtt";
-	ci.client_user = "gaohongwei";
-	ci.client_pass = "";
+//	ci.client_user = "gaohongwei";
+//	ci.client_pass = "";
+	
 	/* Initiate client and connect to server, if this fails immediately an error code is returned
 	  otherwise mqtt_connection_cb will be called with connection result after attempting
 	  to establish a connection with the server.
@@ -135,3 +136,25 @@ static int inpub_id;
 		printf("Publish result: %d\n", result);
 	}
 }
+
+/*
+ *	
+ *mqtt_client_t static_client;
+	static_client.conn_state = 0;
+	mqtt_do_connect(&static_client);
+	my_mqtt_publish(&static_client, (void *)mqtt_pub_request_cb);
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ **/

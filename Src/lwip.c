@@ -90,21 +90,21 @@ uint8_t GATEWAY_ADDRESS[4];
 void MX_LWIP_Init(void)
 {
   /* IP addresses initialization */
-  IP_ADDRESS[0] = 192;
-  IP_ADDRESS[1] = 168;
-  IP_ADDRESS[2] = 1;
-  IP_ADDRESS[3] = 90;
-  NETMASK_ADDRESS[0] = 255;
-  NETMASK_ADDRESS[1] = 255;
-  NETMASK_ADDRESS[2] = 255;
-  NETMASK_ADDRESS[3] = 0;
-  GATEWAY_ADDRESS[0] = 192;
-  GATEWAY_ADDRESS[1] = 168;
-  GATEWAY_ADDRESS[2] = 1;
-  GATEWAY_ADDRESS[3] = 1;
-  
-  /* Initilialize the LwIP stack with RTOS */
-  tcpip_init( NULL, NULL );
+//  IP_ADDRESS[0] = 192;
+//  IP_ADDRESS[1] = 168;
+//  IP_ADDRESS[2] = 1;
+//  IP_ADDRESS[3] = 90;
+//  NETMASK_ADDRESS[0] = 255;
+//  NETMASK_ADDRESS[1] = 255;
+//  NETMASK_ADDRESS[2] = 255;
+//  NETMASK_ADDRESS[3] = 0;
+//  GATEWAY_ADDRESS[0] = 192;
+//  GATEWAY_ADDRESS[1] = 168;
+//  GATEWAY_ADDRESS[2] = 1;
+//  GATEWAY_ADDRESS[3] = 1;
+//  
+//  /* Initilialize the LwIP stack with RTOS */
+//  tcpip_init( NULL, NULL );
 
   /* IP addresses initialization without DHCP (IPv4) */
   IP4_ADDR(&ipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);

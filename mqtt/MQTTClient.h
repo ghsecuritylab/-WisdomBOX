@@ -15,7 +15,7 @@
  *    Ian Craggs - documentation and platform specific header
  *    Ian Craggs - add setMessageHandler function
  *******************************************************************************/
-#include "MQTTFreeRTOS.h"
+
 #if !defined(MQTT_CLIENT_H)
 #define MQTT_CLIENT_H
 
@@ -33,7 +33,7 @@
   #define DLLImport
   #define DLLExport
 #endif
-
+#include "MQTTFreeRTOS.h"
 #include "MQTTPacket.h"
 
 #if defined(MQTTCLIENT_PLATFORM_HEADER)
@@ -54,7 +54,7 @@
 enum QoS { QOS0, QOS1, QOS2, SUBFAIL=0x80 };
 
 /* all failure return codes must be negative */
-	 enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1 };//, SUCCESS = 0 };
+	 enum returnCode { BUFFER_OVERFLOW = -2, FAILURE = -1 , MQTTSUCCESS = 0 };
 
 /* The Platform specific header must define the Network and Timer structures and functions
  * which operate on them.

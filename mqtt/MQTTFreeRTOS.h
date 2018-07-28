@@ -14,8 +14,16 @@
  *    Allan Stockdill-Mander - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
-#if !defined(MQTTFreeRTOS_H)
-#define MQTTFreeRTOS_H
+#ifndef _MQTTFreeRTOS_H
+#define _MQTTFreeRTOS_H
+
+//#include "lwip/api.h"
+//#include "lwip/tcpip.h"
+//#include "lwip/memp.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+//#include "lwip.h"
+#include "netif/ethernet.h"
 
 #include "FreeRTOS.h"
 #include "semphr.h"
@@ -23,9 +31,12 @@
 
 typedef struct Timer 
 {
+	uint32_t init_tick;
+	uint32_t timeout_ms;
 	TickType_t xTicksToWait;
 	TimeOut_t xTimeOut;
 } Timer;
+
 
 typedef struct Network Network;
 
@@ -36,6 +47,7 @@ struct Network
 	int (*mqttwrite) (Network*, unsigned char*, int, int);
 	void (*disconnect) (Network*);
 };
+
 
 void TimerInit(Timer*);
 char TimerIsExpired(Timer*);

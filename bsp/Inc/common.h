@@ -9,20 +9,20 @@
  extern "C" {
 #endif
 
-typedef struct Network Network;
+//typedef struct Network Network;
 
 extern osMessageQId recvQueueHandle;
 	extern osSemaphoreId TIMEBinarySemHandle;
 //extern osMessageQId MBQueueHandle;
 		__IO uint32_t usTick; 
 	 
-struct Network
-{
-	int my_socket;
-	int (*mqttread) (Network*, unsigned char*, int, int);
-	int (*mqttwrite) (Network*, unsigned char*, int, int);
-	void (*disconnect) (Network*);
-};
+//struct Network
+//{
+//	int my_socket;
+//	int (*mqttread) (Network*, unsigned char*, int, int);
+//	int (*mqttwrite) (Network*, unsigned char*, int, int);
+//	void (*disconnect) (Network*);
+//};
 	 
 #define UAST_BUFFER_SIZE  128 
 typedef struct Msg 

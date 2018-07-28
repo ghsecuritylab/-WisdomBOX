@@ -57,7 +57,7 @@ void EEinit(void)
 			GATEWAY_ADDRESS[0] = 192;
 			GATEWAY_ADDRESS[1] = 168;
 			GATEWAY_ADDRESS[2] = 1;
-			GATEWAY_ADDRESS[3] = 1;
+			GATEWAY_ADDRESS[3] = 254;
 			
 		}
 }

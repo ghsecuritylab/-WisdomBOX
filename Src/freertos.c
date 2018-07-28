@@ -81,6 +81,8 @@
 #include "cat1023.h"
 #include "mbcrc.h"
 #include "mymqtt.h"
+
+#include "MQTTClient.h"
 /* USER CODE END Includes */
 
 /* Variables -----------------------------------------------------------------*/
@@ -106,6 +108,7 @@ osSemaphoreId TIMEBinarySemHandle;
 #define REG_HOLDING_START 1
 #define REG_HOLDING_NREGS 130
 
+//#define MQTT_TASK 1
 /* ----------------------- Static variables ---------------------------------*/
 
 //struct netif gnetif; /* network interface structure */
@@ -130,13 +133,14 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 /* USER CODE BEGIN FunctionPrototypes */
 extern STDATETIME stDateTime;
 uint8_t User_notification(struct netif *netif);
-int NetworkConnect(Network *n, char *addr, char *port);
-int FreeRTOS_read(Network *, unsigned char *, int, int);
-int FreeRTOS_write(Network *, unsigned char *, int, int);
-void FreeRTOS_disconnect(Network *);
+//int NetworkConnect(Network *n, char *addr, char *port);
+//int FreeRTOS_read(Network *, unsigned char *, int, int);
+//int FreeRTOS_write(Network *, unsigned char *, int, int);
+//void FreeRTOS_disconnect(Network *);
 int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms);
 void rede_adc();
 void tcp_server(int conn);
+void messageArrived(MessageData* data);
 /* USER CODE END FunctionPrototypes */
 
 /* Hook prototypes */
@@ -470,13 +474,66 @@ void mqtt_clien(void const * argument)
 {
 	
   /* USER CODE BEGIN mqtt_clien */
-	mqtt_client_t static_client;
-	static_client.conn_state = 0;
-	mqtt_do_connect(&static_client);
+/* connect to m2m.eclipse.org, subscribe to a topic, send and receive messages regularly every 1 sec */
+	MQTTClient client;
+	Network network;
+	unsigned char sendbuf[80], readbuf[80];
+	int rc = 0, 
+		count = 0;
+	MQTTPacket_connectData connectData = MQTTPacket_connectData_initializer;
+
+	argument = 0;
+	NetworkInit(&network);
+	MQTTClientInit(&client, &network, 30000, sendbuf, sizeof(sendbuf), readbuf, sizeof(readbuf));
+
+//	char* address = "45.40.243.84";
+//	char* address = "176.122.166.83";
+//	char* address = "66.154.108.162";
+	char* address = "192.168.1.113";
+//	char* port = "1883";
+	if ((rc = NetworkConnect(&network, address, 1883)) != 0)
+		printf("Return code from network connect is %d\n", rc);
+
+#if defined(MQTT_TASK)
+	if ((rc = MQTTStartTask(&client)) != pdPASS)
+		printf("Return code from start tasks is %d\n", rc);
+#endif
+
+	connectData.MQTTVersion = 3;
+	connectData.clientID.cstring = "mqtt1test";
+	connectData.keepAliveInterval = 50;           //seconds
+	connectData.cleansession = 1;
+//	connectData.username.cstring = "gaohongwei/iot";
+	//	connectData.password.cstring = "f+Q9Lp++T5nysNVcLVfOWpIIDVz8MaVm5dyJA8jEXdU=";
+
+	if ((rc = MQTTConnect(&client, &connectData)) != 0)
+		printf("Return code from MQTT connect is %d\n", rc);
+	else
+		printf("MQTT Connected\n");
+
+	if ((rc = MQTTSubscribe(&client, "test", 2, messageArrived)) != 0)
+		printf("Return code from MQTT subscribe is %d\n", rc);
   /* Infinite loop */
   for(;;)
   {
- my_mqtt_publish(&static_client, (void *)mqtt_pub_request_cb);
+	  
+	  MQTTMessage message;
+	  char payload[30];
+
+	  message.qos = 1;
+	  message.retained = 0;
+	  message.payload = payload;
+	  sprintf(payload, "message number %d", count);
+	  message.payloadlen = strlen(payload);
+
+	  //		if ((rc = MQTTPublish(&client, "test1", &message)) != 0)
+	  //			printf("Return code from MQTT publish is %d\n", rc);
+
+	
+	  		if((rc = MQTTYield(&client, 1000)) != 0)
+	  			printf("Return code from yield is %d\n", rc);
+
+	  osDelay(10);
     osDelay(1000);
   }
   /* USER CODE END mqtt_clien */
@@ -546,6 +603,14 @@ void socket_sever(void const * argument)
 }
 
 /* USER CODE BEGIN Application */
+void messageArrived(MessageData* data)
+{
+	printf("Message arrived on topic %.*s: %.*s\n",
+		data->topicName->lenstring.len,
+		data->topicName->lenstring.data,
+		data->message->payloadlen,
+		data->message->payload);
+}
 eMBErrorCode
 eMBRegInputCB(UCHAR *pucRegBuffer, USHORT usAddress, USHORT usNRegs)
 {

@@ -17,6 +17,7 @@
 
 #include "MQTTFreeRTOS.h"
 #include <string.h>
+//typedef struct Network Network;
 
 int ThreadStart(Thread* thread, void (*fn)(void*), void* arg)
 {
@@ -53,8 +54,8 @@ int MutexUnlock(Mutex* mutex)
 
 void TimerCountdownMS(Timer* timer, unsigned int timeout_ms)
 {
-	timer->xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
-	vTaskSetTimeOutState(&timer->xTimeOut); /* Record the time at which this function was entered. */
+	timer->init_tick = HAL_GetTick();
+	timer->timeout_ms = timeout_ms;
 }
 
 
@@ -66,73 +67,76 @@ void TimerCountdown(Timer* timer, unsigned int timeout)
 
 int TimerLeftMS(Timer* timer) 
 {
-	xTaskCheckForTimeOut(&timer->xTimeOut, &timer->xTicksToWait); /* updates xTicksToWait to the number left */
-	return (timer->xTicksToWait < 0) ? 0 : (timer->xTicksToWait * portTICK_PERIOD_MS);
+	int ret = 0;
+	uint32_t cur_tick = HAL_GetTick();   // The HAL tick period is 1 millisecond.
+	if(cur_tick < timer->init_tick)
+	{
+		 // Timer wrap-around detected
+	  // printf("Timer: wrap-around detected from %d to %d\n", timer->init_tick, cur_tick);
+	  timer->timeout_ms -= 0xFFFFFFFF - timer->init_tick;
+		timer->init_tick = 0;
+	}
+	ret = timer->timeout_ms - (cur_tick - timer->init_tick);
+
+	return (ret >= 0) ? ret : 0;
 }
 
 
 char TimerIsExpired(Timer* timer)
 {
-	return xTaskCheckForTimeOut(&timer->xTimeOut, &timer->xTicksToWait) == pdTRUE;
+	return (TimerLeftMS(timer) > 0) ? 0 : 1;
 }
 
 
 void TimerInit(Timer* timer)
 {
-	timer->xTicksToWait = 0;
-	memset(&timer->xTimeOut, '\0', sizeof(timer->xTimeOut));
+	timer->init_tick = 0;
+	timer->timeout_ms = 0;
 }
 
 
 int FreeRTOS_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
-	TickType_t xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
-	TimeOut_t xTimeOut;
-	int recvLen = 0;
-
-	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
-	do
+	struct timeval interval = { timeout_ms / 1000, (timeout_ms % 1000) * 1000 };
+	if (interval.tv_sec < 0 || (interval.tv_sec == 0 && interval.tv_usec <= 0))
 	{
-		int rc = 0;
+		interval.tv_sec = 0;
+		interval.tv_usec = 1000;
+	}
 
-//		FreeRTOS_setsockopt(n->my_socket, 0, FREERTOS_SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
-//		rc = FreeRTOS_recv(n->my_socket, buffer + recvLen, len - recvLen, 0);
-		if (rc > 0)
-			recvLen += rc;
-		else if (rc < 0)
+	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&interval, sizeof(struct timeval));
+
+	int bytes = 0;
+	while (bytes < len)
+	{
+		int rc = recv(n->my_socket, &buffer[bytes], (size_t)(len - bytes), 0);
+		if (rc == -1)
 		{
-			recvLen = rc;
-			break;
+			if (errno == EAGAIN) return -2;
+			else if (errno == EINTR) continue;
+			else return -1;
+			//if (errno != ENOTCONN && errno != ECONNRESET)
+			//{
+			//}
 		}
-	} while (recvLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
-
-	return recvLen;
+		else if (rc == 0) return -1;
+		//else if (rc==0) break;
+		else bytes += rc;
+	}
+	return bytes;
 }
 
 
 int FreeRTOS_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
-//	TickType_t xTicksToWait = timeout_ms / portTICK_PERIOD_MS; /* convert milliseconds to ticks */
-//	TimeOut_t xTimeOut;
-	int sentLen = 0;
-//
-//	vTaskSetTimeOutState(&xTimeOut); /* Record the time at which this function was entered. */
-//	do
-//	{
-//		int rc = 0;
-//
-//		FreeRTOS_setsockopt(n->my_socket, 0, FREERTOS_SO_RCVTIMEO, &xTicksToWait, sizeof(xTicksToWait));
-//		rc = FreeRTOS_send(n->my_socket, buffer + sentLen, len - sentLen, 0);
-//		if (rc > 0)
-//			sentLen += rc;
-//		else if (rc < 0)
-//		{
-//			sentLen = rc;
-//			break;
-//		}
-//	} while (sentLen < len && xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE);
+	struct timeval tv;
 
-	return sentLen;
+	tv.tv_sec = 0; /* 30 Secs Timeout */
+	tv.tv_usec = timeout_ms * 1000;   // Not init'ing this can cause strange errors
+
+	setsockopt(n->my_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
+	int	rc = write(n->my_socket, buffer, len);
+	return rc;
 }
 
 
@@ -153,27 +157,142 @@ void NetworkInit(Network* n)
 
 int NetworkConnect(Network* n, char* addr, int port)
 {
-//	struct freertos_sockaddr sAddr;
-	int retVal = -1;
-//	uint32_t ipAddress;
+	int sockfd, error;
+	struct sockaddr_in servaddr;
+	socklen_t len;
+	struct hostent *host;
+    
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) return sockfd;
+
+	host = gethostbyname(addr);
+	if (NULL == host || host->h_addrtype != AF_INET) 
+	{
+		close(sockfd);
+		return -2;
+	}
+
+	memset(&servaddr, 0, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(port);
+	memcpy(&servaddr.sin_addr, host->h_addr, sizeof(struct in_addr));
+	//inet_aton(srv, &(servaddr.sin_addr));
+//inet_pton(AF_INET, srv, &servaddr.sin_addr);
+
+	// TODO: Use SetSockOpt to
+error = connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+	if (error == 0)
+	{
+		error = getsockname(sockfd, (struct sockaddr *)&servaddr, &len);
+		//if (error  >= 0) printf("Server %s connected, local port %d\n", srv, ntohs(servaddr.sin_port));
+		return sockfd;
+	}
+	else
+	{
+		//printf("Error connecting %d\n", error);
+close(sockfd);
+		return error;
+	}
+//	int type = SOCK_STREAM;
+//	struct sockaddr_in address;
+//	int rc = -1;
+//	sa_family_t family = AF_INET;
+//	struct addrinfo *result = NULL;
+//	struct addrinfo hints = { 0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL };
+//	static struct timeval tv;
 //
-//	if ((ipAddress = FreeRTOS_gethostbyname(addr)) == 0)
-//		goto exit;
+//	n->my_socket = -1;
+//	if (addr[0] == '[')
+//		++addr;
 //
-//	sAddr.sin_port = FreeRTOS_htons(port);
-//	sAddr.sin_addr = ipAddress;
-//
-//	if ((n->my_socket = FreeRTOS_socket(FREERTOS_AF_INET, FREERTOS_SOCK_STREAM, FREERTOS_IPPROTO_TCP)) < 0)
-//		goto exit;
-//
-//	if ((retVal = FreeRTOS_connect(n->my_socket, &sAddr, sizeof(sAddr))) < 0)
+//	if ((rc = getaddrinfo(addr, port, &hints, &result)) == 0)
 //	{
-//		FreeRTOS_closesocket(n->my_socket);
-//	    goto exit;
+//		struct addrinfo* res = result;
+//		/* prefer ip4 addresses */
+//		while (res)
+//		{
+//			if (res->ai_family == AF_INET)
+//			{
+//				result = res;
+//				break;
+//			}
+//			res = res->ai_next;
+//		}
+//		if (result->ai_family == AF_INET)
+//		{
+//			address.sin_port = ((struct sockaddr_in*)(result->ai_addr))->sin_port;      // htons(port);
+//			address.sin_family = family = AF_INET;
+//			address.sin_addr = ((struct sockaddr_in*)(result->ai_addr))->sin_addr;
+//		}
+//		else
+//			rc = -1;
+//		freeaddrinfo(result);
+//	}
+//	if (rc == 0)
+//	{
+//		n->my_socket =	socket(family, type, 0);
+//		if (n->my_socket != -1)
+//		{
+//			if (family == AF_INET)
+//				rc = connect(n->my_socket, (struct sockaddr*)&address, sizeof(address));
+//		}
+//	}
+//#ifdef USE_LCD 
+//	uint8_t iptxt[20];
+//	sprintf((char *)iptxt, "%s", ip4addr_ntoa((const ip4_addr_t *)&address.sin_addr));
+//	printf("Static IP address: %s\n", iptxt);
+//#endif
+//	return rc;
+//	struct sockaddr_in sAddr;
+//	int retVal = -1;
+//	struct addrinfo* res = NULL;//
+//	struct addrinfo *result = NULL;
+//	struct addrinfo hints = { 0, AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, 0, NULL, NULL, NULL };
+//	if ((getaddrinfo(addr, NULL, &hints, &result)) == 0)
+//	{
+//		
+//		res	= result;
+//		/* prefer ip4 addresses */
+//		while (res)
+//		{
+//			if (res->ai_family == AF_INET)
+//			{
+//				result = res;
+//				break;
+//			}
+//			res = res->ai_next;
+//		}
+//		if (result->ai_family == AF_INET)
+//		{
+//			sAddr.sin_port = ((struct sockaddr_in*)(result->ai_addr))->sin_port; 
+////			sAddr.sin_port = htons(port);
+//			sAddr.sin_addr = ((struct sockaddr_in*)(result->ai_addr))->sin_addr;
+//		}
+//		else 	goto exit;
+//		
+//		freeaddrinfo(result);
+//	
+//		//sAddr.sin_port = ((struct sockaddr_in*)(result->ai_addr))->sin_port;       // htons(port);
+//			
+//	
+//
+//		if((n->my_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+//			goto exit;
+//
+//		if ((retVal = connect(n->my_socket, (struct sockaddr*) &sAddr, sizeof(sAddr))) < 0)
+//		{
+//			closesocket(n->my_socket);
+//			goto exit;
+//		}
+//	}
+//	else
+//	{
+//		goto exit;
 //	}
 //
 //exit:
-	return retVal;
+//	return retVal;
 }
 
 
