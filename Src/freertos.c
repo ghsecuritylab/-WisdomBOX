@@ -127,7 +127,7 @@ void uMBpoll(void const * argument);
 void period(void const * argument);
 void mqtt_clien(void const * argument);
 void socket_sever(void const * argument);
-
+void restore(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* USER CODE BEGIN FunctionPrototypes */
@@ -398,6 +398,7 @@ void period(void const * argument)
 	uint16_t dac;
 	uint8_t modeflage;
 	BaseType_t xResult;
+	uint8_t restoretime;
 	//	const TickType_t xMaxBlockTime = pdMS_TO_TICKS(200); /* 鐠佸墽鐤嗙粵澶婄窡閺冨爼�?? wait_time */
 
 	I2C_EEPROM_ReadBuffer(EE_timeaddr, time_buf, 48);
@@ -409,14 +410,29 @@ void period(void const * argument)
 	//	}
 	I2C_EEPROM_ReadBuffer(EE_modeflageaddr, &modeflage, 1);
 	//	printf("mode:%d\n", modeflage);
-
+	restoretime = 0;
 	for (;;)
 	{
 		// 信号量获�? 设置阻塞时间 10 ticks
 		xResult = xSemaphoreTake(TIMEBinarySemHandle, (TickType_t)portMAX_DELAY);
 		if (xResult == pdTRUE)
 		{
+			
 			//osDelay(10);
+			if (HAL_GPIO_ReadPin(restore_GPIO_Port, restore_Pin)==0)
+			{
+				restoretime++;
+				if (restoretime>3)
+				{
+					restoretime = 0;
+					restore();
+				}
+			}
+			else
+			{
+				restoretime = 0;
+			}
+			
 			HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
 			BSP_LED_Toggle(LED_GREEN);
 			UpdateDateTime(&time);
@@ -433,7 +449,7 @@ void period(void const * argument)
 						{
 							dac = 1000;
 						}
-						dac = dac * 3.055;
+						dac = dac * 3.055f;
 						if (dac > 3055)
 							dac = 3055;
 						spi1_dac_write_chb(dac);
@@ -823,7 +839,40 @@ int server_read(int newconn, unsigned char *buffer, int len, int timeout_ms)
 	return rc;
 }
 
+void restore(void)
+{
+	uint8_t zero = 0;
+	printf("\nstart restore\n");
+	HAL_IWDG_Refresh(&hiwdg);
+	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
+	BSP_LED_On(LED_RED);
+	BSP_LED_On(LED_GREEN);
+	osDelay(500);
+	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
+	taskDISABLE_INTERRUPTS();
 
+
+	I2C_EEPROM_WriteBuffer(EE_ipaddr, &zero, 12);
+	osDelay(10);
+	I2C_EEPROM_WriteBuffer(EE_timeaddr, &zero, 24);
+	osDelay(10);
+	I2C_EEPROM_WriteBuffer(EE_timeaddr + 24, &zero, 24);
+	osDelay(10);
+	HAL_GPIO_TogglePin(WDI_GPIO_Port, WDI_Pin);
+	//HAL_IWDG_Refresh(&hiwdg);*/
+	I2C_EEPROM_WriteBuffer(EE_timeflageaddr, &zero, 24);
+	osDelay(10);
+	I2C_EEPROM_WriteBuffer(EE_modeflageaddr, &zero, 10);
+	osDelay(10);
+	I2C_EEPROM_WriteBuffer(EE_setipflageaddr, &zero, 10);
+	taskENABLE_INTERRUPTS();
+	osDelay(10);
+	printf("restoreok\n");
+	printf("reboot\n");
+	__set_FAULTMASK(1);
+	HAL_NVIC_SystemReset();
+
+}
 
 
 //int keepalive(Client* c)

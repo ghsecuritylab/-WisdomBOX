@@ -232,12 +232,12 @@ PUTCHAR_PROTOTYPE
 {
 	/* Place your implementation of fputc here */
 	/* e.g. write a character to the USART3 and Loop until the end of transmission */
-	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
-	while (HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY)
-	{
-	} 
-	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&ch, 1);
-	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
+///*	HAL_GPIO_WritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_SET);
+//	while (HAL_UART_GetState(&huart1) != HAL_UART_STATE_READY)
+//	{
+//	} 
+//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&ch, 1);
+//	HAL_GPIO_W*/ritePin(_485DIR_GPIO_Port, _485DIR_Pin, GPIO_PIN_RESET);
 
 	return ch;
 }
